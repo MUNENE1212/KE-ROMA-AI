@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 import uvicorn
 from models.database import init_db
 from config.config import get_settings
+from middleware.security import SecurityMiddleware, InputSanitizationMiddleware
 from dotenv import load_dotenv
 
 # Load environment variables at startup
@@ -27,13 +28,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# Security middleware
+app.add_middleware(SecurityMiddleware, calls_per_minute=100)
+app.add_middleware(InputSanitizationMiddleware)
+
+# CORS middleware - Security hardened
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["http://localhost:3000", "http://localhost:8000", "https://your-domain.com"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Include routers

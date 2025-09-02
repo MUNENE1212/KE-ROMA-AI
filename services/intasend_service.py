@@ -20,8 +20,8 @@ class IntaSendService:
         
         print(f"Creating checkout for {phone_number}, amount: {amount}")
         print(f"Using IntaSend URL: {settings.intasend_base_url}")
-        print(f"Publishable key: {settings.intasend_publishable_key[:20]}...")
-        print(f"Secret key: {settings.intasend_secret_key[:20]}...")
+        print(f"Publishable key: {settings.intasend_publishable_key[:8]}***")
+        print(f"Secret key: ***{settings.intasend_secret_key[-4:]}")
         
         checkout_data = {
             "public_key": settings.intasend_publishable_key,

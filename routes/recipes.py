@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
-from models.schemas import RecipeGenerationRequest, RecipeGenerationResponse, Recipe, RecipeCreate
+from models.schemas import RecipeGenerationRequest, RecipeGenerationResponse, User
+from services.multi_ai_service import MultiAIService
+from routes.auth import get_current_user
+from services.recipe_service import RecipeService
+from utils.security import SecurityUtils
 from models.database import get_database
 from models.user import UserService
-from services.multi_ai_service import MultiAIService
-from services.recipe_service import RecipeService
 from bson import ObjectId
-from typing import List
+from typing import List, Optional
 import time
 
 router = APIRouter()

@@ -121,4 +121,3 @@ The React Native mobile app is in the `mobile-app/` directory:
 cd mobile-app
 npm install
 expo start
-```
