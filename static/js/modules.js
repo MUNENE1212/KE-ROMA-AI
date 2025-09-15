@@ -1068,10 +1068,31 @@ function viewRecipe(index) {
         showNotification('Recipe not found', 'error');
         return;
     }
-    
-    const modal = document.getElementById('recipeModal');
+
+    // Ensure modal exists in DOM
+    let modal = document.getElementById('recipeModal');
+    if (!modal) {
+        console.error('Recipe modal not found in DOM, recreating...');
+        // Create modal if it doesn't exist
+        modal = document.createElement('div');
+        modal.id = 'recipeModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-overlay">
+                <div class="modal-content recipe-modal-content">
+                    <span class="close" onclick="closeRecipeModal()">&times;</span>
+                    <div id="recipeDetail">
+                        <!-- Recipe details will be populated here -->
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        ModalManager.registerModal(modal);
+    }
+
     const detail = document.getElementById('recipeDetail');
-    
+
     if (modal && detail) {
         // Clean recipe name (remove markdown formatting)
         const cleanName = recipe.name.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '');
@@ -1156,14 +1177,15 @@ function viewRecipe(index) {
         `;
         modal.style.display = 'block';
     } else {
-        showNotification('Recipe modal not found', 'error');
+        console.error('Recipe modal or detail element not found:', { modal, detail });
+        showNotification('Unable to display recipe. Please try again.', 'error');
     }
 }
 
 function closeRecipeModal() {
     const modal = document.getElementById('recipeModal');
     if (modal) {
-        modal.style.display = 'none';
+        ModalManager.closeModal(modal);
     }
 }
 
@@ -2507,6 +2529,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAuthUI();
         console.log('Auth UI updated');
 
+        // Ensure recipe modal is properly initialized
+        initializeRecipeModal();
+
         // Load real highlight recipes for home page
         loadHomePageRecipes();
 
@@ -2546,6 +2571,32 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('App initialization failed. Please refresh the page.', 'error');
     }
 });
+
+// Initialize recipe modal to ensure it exists
+function initializeRecipeModal() {
+    let modal = document.getElementById('recipeModal');
+    if (!modal) {
+        console.log('Creating recipe modal...');
+        modal = document.createElement('div');
+        modal.id = 'recipeModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-overlay">
+                <div class="modal-content recipe-modal-content">
+                    <span class="close" onclick="closeRecipeModal()">&times;</span>
+                    <div id="recipeDetail">
+                        <!-- Recipe details will be populated here -->
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        ModalManager.registerModal(modal);
+        console.log('Recipe modal created and registered');
+    } else {
+        console.log('Recipe modal already exists');
+    }
+}
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
