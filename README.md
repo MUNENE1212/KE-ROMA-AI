@@ -16,6 +16,14 @@
 - **Cultural Storytelling**: Learn about the history and traditions behind each dish
 - **Real-time Generation**: Instant recipe creation with personalized adjustments
 
+### 💬 AI Chat Assistant
+- **Interactive Cooking Support**: Ask questions about recipes, techniques, and ingredients
+- **Real-time Recipe Help**: Get instant answers while cooking
+- **Ingredient Substitutions**: Smart suggestions for unavailable ingredients
+- **Cooking Technique Guidance**: Step-by-step explanations of cooking methods
+- **Cultural Context**: Learn about traditional African cooking practices
+- **Voice Integration**: Hands-free interaction during cooking (Premium)
+
 ### 🏠 Interactive Cooking Experience
 - **Step-by-Step AI Guidance**: Real-time cooking instructions with smart timers
 - **Voice Commands**: Hands-free cooking with voice-activated assistance (Premium)
@@ -216,6 +224,14 @@ DEBUG=true
 - **Page Transitions**: Smooth navigation between sections
 - **Micro-interactions**: Subtle animations that enhance user experience
 
+#### 💬 AI Chat Assistant Features
+- **Real-time Cooking Support**: Ask questions while cooking for instant help
+- **Ingredient Expertise**: Get detailed information about African ingredients
+- **Technique Guidance**: Learn traditional and modern cooking methods
+- **Recipe Modifications**: Request adjustments for dietary needs or preferences
+- **Cultural Knowledge**: Discover the stories behind African dishes
+- **Smart Suggestions**: Receive personalized recommendations based on your cooking history
+
 #### 📱 Responsive Interactions
 - **Touch Gestures**: Swipe and tap interactions on mobile devices
 - **Keyboard Navigation**: Full keyboard accessibility support
@@ -272,6 +288,15 @@ response = requests.post('http://localhost:8000/api/recipes/generate', json={
 response = requests.post('http://localhost:8000/api/chat/send', json={
     'message': 'How do I make ugali?'
 })
+
+# Advanced chat examples
+chat_examples = [
+    "What's a good substitute for tomatoes?",
+    "How do I cook jollof rice perfectly?",
+    "Tell me about traditional Kenyan spices",
+    "How long should I marinate chicken?",
+    "What's the difference between berbere and harissa?"
+]
 ```
 
 ## 🧪 Testing
