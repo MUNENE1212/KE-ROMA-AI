@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KE-ROUMA - Interactive AI-Powered Recipe Experience</title>
+    <!-- Google Fonts for beautiful typography -->
+    <!-- Enhanced Google Fonts for Aesthetic Design -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Nunito:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Lato:wght@300;400;700;900&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="static/css/styles.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
 </head>
 <body>
     <!-- Floating Background Icons -->
@@ -73,22 +82,30 @@
                     <h1 class="hero-title">Your AI Kitchen Companion</h1>
                     <p class="hero-subtitle">Experience the future of African cooking with AI that learns your taste, suggests recipes based on your mood, and guides you through every step of culinary excellence.</p>
                     
+                    <div class="welcome-message">
+                        <p><i class="fas fa-hand-wave"></i> Welcome to KE-ROUMA! Choose how you'd like to get started:</p>
+                    </div>
+
                     <div class="action-grid">
-                        <div class="action-card" onclick="quickAction('mood')">
+                        <div class="action-card" onclick="quickAction('mood')" data-tooltip="Tell us your mood and we'll suggest perfect recipes!">
                             <i class="fas fa-smile-beam"></i>
                             <span>What should I cook today?</span>
+                            <div class="micro-instruction">Click to get mood-based recipes</div>
                         </div>
-                        <div class="action-card" onclick="quickAction('pantry')">
+                        <div class="action-card" onclick="quickAction('pantry')" data-tooltip="Upload a photo of your ingredients">
                             <i class="fas fa-camera-retro"></i>
                             <span>Scan my pantry</span>
+                            <div class="micro-instruction">Coming soon - smart ingredient detection</div>
                         </div>
-                        <div class="action-card" onclick="quickAction('surprise')">
+                        <div class="action-card" onclick="quickAction('surprise')" data-tooltip="Let AI surprise you with creative recipes!">
                             <i class="fas fa-magic"></i>
                             <span>Surprise me!</span>
+                            <div class="micro-instruction">Get random delicious combinations</div>
                         </div>
-                        <div class="action-card" onclick="quickAction('healthy')">
+                        <div class="action-card" onclick="quickAction('healthy')" data-tooltip="Nutritious and delicious meals">
                             <i class="fas fa-heartbeat"></i>
                             <span>Something healthy</span>
+                            <div class="micro-instruction">Focus on balanced, healthy options</div>
                         </div>
                     </div>
 
@@ -97,60 +114,12 @@
                     </button>
                 </div>
 
-                <!-- Enhanced Recipe Results -->
-                <div class="recipe-grid">
-                    <div class="recipe-card">
-                        <div class="recipe-card-content">
-                            <div class="recipe-header">
-                                <h3>Ugali with Sukuma Wiki</h3>
-                                <span class="recipe-origin">Kenyan</span>
-                            </div>
-                            <div class="recipe-meta">
-                                <span><i class="fas fa-clock"></i> 25 mins</span>
-                                <span><i class="fas fa-users"></i> 4 servings</span>
-                                <span><i class="fas fa-star"></i> 4.8</span>
-                            </div>
-                            <p>Traditional Kenyan comfort food combining creamy ugali with nutritious collard greens, perfect for a hearty family meal that warms the soul.</p>
-                            <button class="btn-primary" onclick="viewRecipe(0)">
-                                <i class="fas fa-eye"></i> View Recipe
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="recipe-card">
-                        <div class="recipe-card-content">
-                            <div class="recipe-header">
-                                <h3>Coconut Rice & Fish</h3>
-                                <span class="recipe-origin">Coastal</span>
-                            </div>
-                            <div class="recipe-meta">
-                                <span><i class="fas fa-clock"></i> 35 mins</span>
-                                <span><i class="fas fa-users"></i> 6 servings</span>
-                                <span><i class="fas fa-star"></i> 4.7</span>
-                            </div>
-                            <p>Aromatic coconut rice paired with fresh fish, infused with coastal spices for an authentic Kenyan experience that brings the ocean to your table.</p>
-                            <button class="btn-primary" onclick="viewRecipe(1)">
-                                <i class="fas fa-eye"></i> View Recipe
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="recipe-card">
-                        <div class="recipe-card-content">
-                            <div class="recipe-header">
-                                <h3>Githeri Special</h3>
-                                <span class="recipe-origin">Traditional</span>
-                            </div>
-                            <div class="recipe-meta">
-                                <span><i class="fas fa-clock"></i> 45 mins</span>
-                                <span><i class="fas fa-users"></i> 8 servings</span>
-                                <span><i class="fas fa-star"></i> 4.9</span>
-                            </div>
-                            <p>Hearty mixture of beans and corn elevated with fresh vegetables and aromatic spices for ultimate comfort and nutrition.</p>
-                            <button class="btn-primary" onclick="viewRecipe(2)">
-                                <i class="fas fa-eye"></i> View Recipe
-                            </button>
-                        </div>
+                <!-- Dynamic Recipe Results -->
+                <div id="homeRecipesContainer" class="recipe-grid">
+                    <!-- Recipes will be loaded dynamically via JavaScript -->
+                    <div class="recipe-loading">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-solid);"></i>
+                        <p>Loading personalized recipes...</p>
                     </div>
                 </div>
             </section>
@@ -163,25 +132,30 @@
                         <p>Let our AI suggest perfect recipes based on your current mood and energy level</p>
                     </div>
                     <div class="mood-selector">
-                        <div class="mood-option" onclick="setMood('energetic')" data-mood="energetic">
+                        <div class="mood-option" onclick="setMood('energetic')" data-mood="energetic" data-tooltip="High-energy meals for active days">
                             <i class="fas fa-bolt"></i>
                             <span>Energetic</span>
+                            <div class="micro-instruction">Spicy & bold flavors</div>
                         </div>
-                        <div class="mood-option" onclick="setMood('comfort')" data-mood="comfort">
+                        <div class="mood-option" onclick="setMood('comfort')" data-mood="comfort" data-tooltip="Warm, familiar comfort food">
                             <i class="fas fa-heart"></i>
                             <span>Comfort</span>
+                            <div class="micro-instruction">Hearty & familiar dishes</div>
                         </div>
-                        <div class="mood-option" onclick="setMood('adventurous')" data-mood="adventurous">
+                        <div class="mood-option" onclick="setMood('adventurous')" data-mood="adventurous" data-tooltip="Try something new and exciting">
                             <i class="fas fa-rocket"></i>
                             <span>Adventurous</span>
+                            <div class="micro-instruction">Unique flavor combinations</div>
                         </div>
-                        <div class="mood-option" onclick="setMood('healthy')" data-mood="healthy">
+                        <div class="mood-option" onclick="setMood('healthy')" data-mood="healthy" data-tooltip="Nutritious and balanced meals">
                             <i class="fas fa-leaf"></i>
                             <span>Healthy</span>
+                            <div class="micro-instruction">Fresh & nutritious options</div>
                         </div>
-                        <div class="mood-option" onclick="setMood('quick')" data-mood="quick">
+                        <div class="mood-option" onclick="setMood('quick')" data-mood="quick" data-tooltip="Fast recipes for busy days">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Quick</span>
+                            <div class="micro-instruction">Ready in 30 minutes or less</div>
                         </div>
                     </div>
                     <div id="moodFeedback" class="mood-feedback"></div>
@@ -206,10 +180,39 @@
                         <button class="category-tab" onclick="showIngredientCategory('spices')" data-category="spices">
                             <i class="fas fa-pepper-hot"></i> Spices
                         </button>
+                        <button class="category-tab" onclick="showIngredientCategory('dairy')" data-category="dairy">
+                            <i class="fas fa-cheese"></i> Dairy
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('fruits')" data-category="fruits">
+                            <i class="fas fa-apple-alt"></i> Fruits
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('herbs')" data-category="herbs">
+                            <i class="fas fa-leaf"></i> Herbs
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('oils')" data-category="oils">
+                            <i class="fas fa-tint"></i> Oils
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('sweeteners')" data-category="sweeteners">
+                            <i class="fas fa-candy-cane"></i> Sweeteners
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('baking')" data-category="baking">
+                            <i class="fas fa-birthday-cake"></i> Baking
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('beverages')" data-category="beverages">
+                            <i class="fas fa-coffee"></i> Beverages
+                        </button>
+                        <button class="category-tab" onclick="showIngredientCategory('condiments')" data-category="condiments">
+                            <i class="fas fa-utensils"></i> Condiments
+                        </button>
                     </div>
                     
+                    <div class="interactive-hint">
+                        <h4><i class="fas fa-lightbulb"></i> How to Get Started</h4>
+                        <p>Select your mood above, then choose ingredients from the categories below. The more ingredients you select, the better your personalized recipes will be!</p>
+                    </div>
+
                     <input type="text" id="ingredientSearch" class="search-input" placeholder="🔍 Search for ingredients..." oninput="filterIngredients()">
-                    
+
                     <div id="ingredientOptions" class="ingredient-options">
                         <!-- Ingredients will be populated by JavaScript -->
                     </div>
@@ -250,59 +253,11 @@
                         </button>
                     </div>
                     
-                    <div class="recipe-grid">
-                        <div class="recipe-card">
-                            <div class="recipe-card-content">
-                                <div class="recipe-header">
-                                    <h3>Jollof Rice Fusion</h3>
-                                    <span class="recipe-origin">West African</span>
-                                </div>
-                                <div class="recipe-meta">
-                                    <span><i class="fas fa-fire"></i> Trending</span>
-                                    <span><i class="fas fa-star"></i> 4.8</span>
-                                    <span><i class="fas fa-clock"></i> 30 mins</span>
-                                </div>
-                                <p>Modern twist on classic Jollof rice with seasonal vegetables and aromatic spices that create an explosion of flavors.</p>
-                                <button class="btn-primary">
-                                    <i class="fas fa-compass"></i> Explore Recipe
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="recipe-card">
-                            <div class="recipe-card-content">
-                                <div class="recipe-header">
-                                    <h3>Ethiopian Injera Bowl</h3>
-                                    <span class="recipe-origin">Ethiopian</span>
-                                </div>
-                                <div class="recipe-meta">
-                                    <span><i class="fas fa-heart"></i> Popular</span>
-                                    <span><i class="fas fa-star"></i> 4.6</span>
-                                    <span><i class="fas fa-clock"></i> 50 mins</span>
-                                </div>
-                                <p>Authentic injera served with mixed vegetables and traditional berbere spice blend for an authentic Ethiopian experience.</p>
-                                <button class="btn-primary">
-                                    <i class="fas fa-compass"></i> Explore Recipe
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="recipe-card">
-                            <div class="recipe-card-content">
-                                <div class="recipe-header">
-                                    <h3>Moroccan Tagine</h3>
-                                    <span class="recipe-origin">North African</span>
-                                </div>
-                                <div class="recipe-meta">
-                                    <span><i class="fas fa-star"></i> New</span>
-                                    <span><i class="fas fa-star"></i> 4.9</span>
-                                    <span><i class="fas fa-clock"></i> 60 mins</span>
-                                </div>
-                                <p>Rich and aromatic slow-cooked stew with tender meat, vegetables, and North African spices in traditional tagine style.</p>
-                                <button class="btn-primary">
-                                    <i class="fas fa-compass"></i> Explore Recipe
-                                </button>
-                            </div>
+                    <div id="discoverRecipesContainer" class="recipe-grid">
+                        <!-- Recipes will be loaded dynamically via JavaScript -->
+                        <div class="recipe-loading">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-solid);"></i>
+                            <p>Loading trending recipes...</p>
                         </div>
                     </div>
                 </div>
@@ -335,29 +290,35 @@
                     </div>
                     
                     <div class="action-grid">
-                        <div class="action-card" onclick="startCookingMode()">
+                        <div class="action-card" onclick="startCookingMode()" data-tooltip="Step-by-step cooking guidance with timers">
                             <i class="fas fa-play-circle"></i>
                             <span>Start Cooking Mode</span>
+                            <div class="micro-instruction">Interactive cooking assistant</div>
                         </div>
-                        <div class="action-card" onclick="setTimer()">
+                        <div class="action-card" onclick="setTimer()" data-tooltip="Set smart cooking timers with notifications">
                             <i class="fas fa-stopwatch"></i>
                             <span>Smart Timer</span>
+                            <div class="micro-instruction">Never overcook again</div>
                         </div>
-                        <div class="action-card" onclick="voiceCommands()">
+                        <div class="action-card" onclick="voiceCommands()" data-tooltip="Control cooking with voice commands">
                             <i class="fas fa-microphone"></i>
                             <span>Voice Assistant</span>
+                            <div class="micro-instruction">Hands-free cooking</div>
                         </div>
-                        <div class="action-card" onclick="nutritionInfo()">
+                        <div class="action-card" onclick="nutritionInfo()" data-tooltip="Detailed nutritional breakdown">
                             <i class="fas fa-chart-pie"></i>
                             <span>Nutrition Analysis</span>
+                            <div class="micro-instruction">Track calories & nutrients</div>
                         </div>
-                        <div class="action-card" onclick="mealPlanner()">
+                        <div class="action-card" onclick="mealPlanner()" data-tooltip="Plan meals for the week ahead">
                             <i class="fas fa-calendar-alt"></i>
                             <span>Meal Planner</span>
+                            <div class="micro-instruction">Weekly meal organization</div>
                         </div>
-                        <div class="action-card" onclick="shoppingList()">
+                        <div class="action-card" onclick="shoppingList()" data-tooltip="Auto-generated shopping lists">
                             <i class="fas fa-shopping-cart"></i>
                             <span>Shopping List</span>
+                            <div class="micro-instruction">Smart grocery planning</div>
                         </div>
                     </div>
                 </div>
@@ -489,8 +450,13 @@
 
     <div id="chatWindow" class="chat-window">
         <div class="chat-header">
-            <strong>AI Kitchen Assistant</strong>
-            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Ask me anything about cooking!</p>
+            <div class="chat-header-content">
+                <strong>AI Kitchen Assistant</strong>
+                <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Ask me anything about cooking!</p>
+            </div>
+            <button class="chat-close-btn" onclick="toggleChat()" title="Close Chat" aria-label="Close chat window">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <div class="chat-messages">
             <div class="chat-message ai">

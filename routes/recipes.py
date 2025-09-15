@@ -14,27 +14,51 @@ router = APIRouter()
 
 @router.post("/generate", response_model=RecipeGenerationResponse)
 async def generate_recipes(request: RecipeGenerationRequest):
-    """Generate AI-powered recipe recommendations based on pantry ingredients"""
+    """Generate AI-powered recipe recommendations based on pantry ingredients and user preferences"""
     start_time = time.time()
-    
+
     # Debug: Log the incoming request
     print(f"DEBUG: Received request: {request}")
     print(f"DEBUG: Request ingredients: {request.ingredients}")
     print(f"DEBUG: Request user_id: {request.user_id}")
-    
+
     try:
         # Check if user exists and premium status
         is_premium = False
         user_id = request.user_id
+        user_data = None
+
         if user_id:
             is_premium = await UserService.check_premium_status(user_id)
-        
-        # Generate recipes using multi-AI service
+            # Get user data for personalization
+            user_data = await UserService.get_user_by_id(user_id)
+
+        # Prepare enhanced ingredients list combining user pantry and request ingredients
+        enhanced_ingredients = list(request.ingredients) if request.ingredients else []
+
+        # Prepare enhanced health goals combining user preferences and request
+        enhanced_health_goals = list(request.dietary_restrictions) if request.dietary_restrictions else []
+
+        if user_data:
+            # Add user's pantry items to ingredients if not already included
+            if user_data.pantry:
+                for pantry_item in user_data.pantry:
+                    if pantry_item.lower() not in [ing.lower() for ing in enhanced_ingredients]:
+                        enhanced_ingredients.append(pantry_item)
+
+            # Add user's health goals if not already included
+            if user_data.health_goals:
+                for goal in user_data.health_goals:
+                    if goal.lower() not in [g.lower() for g in enhanced_health_goals]:
+                        enhanced_health_goals.append(goal)
+
+        # Generate recipes using multi-AI service with enhanced user data
         recipes, generation_info = await MultiAIService.generate_recipes(
-            pantry_ingredients=request.ingredients,
-            health_goals=request.dietary_restrictions,
+            pantry_ingredients=enhanced_ingredients,
+            health_goals=enhanced_health_goals,
             is_premium=is_premium,
-            preferred_provider=getattr(request, 'preferred_provider', 'gemini')
+            preferred_provider=getattr(request, 'preferred_provider', 'gemini'),
+            user_data=user_data
         )
         
         # Save generated recipes to database

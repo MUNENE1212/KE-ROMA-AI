@@ -48,10 +48,11 @@ class MultiAIService:
     
     @staticmethod
     async def generate_recipes(
-        pantry_ingredients: List[str], 
-        health_goals: List[str] = None, 
+        pantry_ingredients: List[str],
+        health_goals: List[str] = None,
         is_premium: bool = False,
-        preferred_provider: str = None
+        preferred_provider: str = None,
+        user_data: Any = None
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Generate AI-powered recipe recommendations with multi-provider support"""
         
@@ -79,7 +80,7 @@ class MultiAIService:
                 generation_info["providers_tried"].append(provider.value)
                 
                 recipes = await MultiAIService._generate_with_provider(
-                    provider, pantry_ingredients, health_goals, is_premium
+                    provider, pantry_ingredients, health_goals, is_premium, user_data
                 )
                 
                 if recipes:
@@ -126,23 +127,24 @@ class MultiAIService:
     
     @staticmethod
     async def _generate_with_provider(
-        provider: AIProvider, 
-        pantry_ingredients: List[str], 
-        health_goals: List[str], 
-        is_premium: bool
+        provider: AIProvider,
+        pantry_ingredients: List[str],
+        health_goals: List[str],
+        is_premium: bool,
+        user_data: Any = None
     ) -> List[Dict[str, Any]]:
         """Generate recipes using the specified provider"""
         
         if provider == AIProvider.OPENAI:
-            return await MultiAIService._generate_with_openai(pantry_ingredients, health_goals, is_premium)
+            return await MultiAIService._generate_with_openai(pantry_ingredients, health_goals, is_premium, user_data)
         elif provider == AIProvider.GEMINI:
-            return await MultiAIService._generate_with_gemini(pantry_ingredients, health_goals, is_premium)
+            return await MultiAIService._generate_with_gemini(pantry_ingredients, health_goals, is_premium, user_data)
         elif provider == AIProvider.HUGGINGFACE:
-            return await MultiAIService._generate_with_huggingface(pantry_ingredients, health_goals, is_premium)
+            return await MultiAIService._generate_with_huggingface(pantry_ingredients, health_goals, is_premium, user_data)
         elif provider == AIProvider.COHERE:
-            return await MultiAIService._generate_with_cohere(pantry_ingredients, health_goals, is_premium)
+            return await MultiAIService._generate_with_cohere(pantry_ingredients, health_goals, is_premium, user_data)
         elif provider == AIProvider.MOCK:
-            return MultiAIService._generate_mock_recipes(pantry_ingredients, health_goals, is_premium)
+            return MultiAIService._generate_mock_recipes(pantry_ingredients, health_goals, is_premium, user_data)
         else:
             raise ValueError(f"Unknown provider: {provider}")
     
@@ -284,91 +286,114 @@ class MultiAIService:
         return random.choice(responses)
 
     @staticmethod
-    async def _generate_with_openai(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool):
+    async def _generate_with_openai(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, user_data: Any = None):
         """Generate recipes using OpenAI API"""
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise Exception("OpenAI API key not configured")
-        
+
         client = AsyncOpenAI(api_key=api_key)
-        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium)
-        
+        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium, user_data=user_data)
+
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=2000,
             temperature=0.7
         )
-        
+
         return MultiAIService._parse_recipe_response(response.choices[0].message.content, is_premium)
     
     @staticmethod
-    async def _generate_with_gemini(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool):
+    async def _generate_with_gemini(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, user_data: Any = None):
         """Generate recipes using Google Gemini API"""
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise Exception("Gemini API key not configured")
-        
+
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium)
-        
+
+        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium, user_data=user_data)
+
         response = await asyncio.to_thread(model.generate_content, prompt)
         return MultiAIService._parse_recipe_response(response.text, is_premium)
     
     @staticmethod
-    async def _generate_with_huggingface(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool):
+    async def _generate_with_huggingface(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, user_data: Any = None):
         """Generate recipes using Hugging Face API"""
         api_key = os.getenv("HUGGINGFACE_API_KEY")
         if not api_key:
             raise Exception("Hugging Face API key not configured")
-        
+
         client = AsyncInferenceClient(token=api_key)
-        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium, max_length=800)
-        
+        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium, max_length=800, user_data=user_data)
+
         response = await client.text_generation(
             prompt=prompt,
             model="microsoft/DialoGPT-large",
             max_new_tokens=1500,
             temperature=0.7
         )
-        
+
         return MultiAIService._parse_recipe_response(response, is_premium)
     
     @staticmethod
-    async def _generate_with_cohere(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool):
+    async def _generate_with_cohere(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, user_data: Any = None):
         """Generate recipes using Cohere API"""
         api_key = os.getenv("COHERE_API_KEY")
         if not api_key:
             raise Exception("Cohere API key not configured")
-        
+
         co = cohere.AsyncClient(api_key)
-        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium)
-        
+        prompt = MultiAIService._build_african_recipe_prompt(pantry_ingredients, health_goals, is_premium, user_data=user_data)
+
         response = await co.generate(
             model='command',
             prompt=prompt,
             max_tokens=1500,
             temperature=0.7
         )
-        
+
         return MultiAIService._parse_recipe_response(response.generations[0].text, is_premium)
     
     @staticmethod
-    def _build_african_recipe_prompt(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, max_length: int = None):
-        """Build a comprehensive prompt for African recipe generation"""
+    def _build_african_recipe_prompt(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, max_length: int = None, user_data: Any = None):
+        """Build a comprehensive prompt for African recipe generation with user personalization"""
         ingredient_list = ", ".join(pantry_ingredients)
         health_context = f" with focus on {', '.join(health_goals)}" if health_goals else ""
-        
+
+        # Build user personalization context
+        user_context = ""
+        if user_data:
+            user_context_parts = []
+
+            # Add user's saved recipes for personalization
+            if hasattr(user_data, 'saved_recipes') and user_data.saved_recipes:
+                user_context_parts.append(f"User has previously saved {len(user_data.saved_recipes)} recipes, suggesting they enjoy diverse African cuisine")
+
+            # Add user's health goals
+            if hasattr(user_data, 'health_goals') and user_data.health_goals:
+                user_health_goals = ", ".join(user_data.health_goals)
+                user_context_parts.append(f"User's health goals include: {user_health_goals}")
+
+            # Add user's pantry preferences
+            if hasattr(user_data, 'pantry') and user_data.pantry:
+                user_pantry = ", ".join(user_data.pantry)
+                user_context_parts.append(f"User typically has these ingredients available: {user_pantry}")
+
+            if user_context_parts:
+                user_context = "\n\nUser Preferences:\n" + "\n".join(f"- {part}" for part in user_context_parts)
+
         if is_premium:
-            prompt = f"""You are a culinary expert specializing in authentic African cuisine. Generate 3 detailed, traditional African recipes using these available ingredients: {ingredient_list}{health_context}.
+            prompt = f"""You are a culinary expert specializing in authentic African cuisine. Generate 3 detailed, traditional African recipes using these available ingredients: {ingredient_list}{health_context}.{user_context}
 
 Focus on:
 - Traditional African cooking methods and flavors
 - Nutritional benefits of indigenous ingredients
 - Cultural significance of the dishes
 - Seasonal and locally available ingredients
+- Personalization based on user's preferences and history
 
 For each recipe, provide:
 Recipe Name: [Traditional African dish name]
@@ -383,12 +408,13 @@ Nutrition Info: [Estimated calories, protein, fiber, key vitamins]
 Format each recipe clearly and separate with "---"."""
 
         else:
-            prompt = f"""Generate 3 simple, authentic African recipes using these ingredients: {ingredient_list}{health_context}.
+            prompt = f"""Generate 3 simple, authentic African recipes using these ingredients: {ingredient_list}{health_context}.{user_context}
 
 Focus on traditional African dishes that are:
 - Easy to prepare
 - Use common African ingredients and cooking methods
 - Nutritious and satisfying
+- Personalized to user's preferences when possible
 
 For each recipe, provide:
 Recipe Name: [African dish name]
@@ -400,11 +426,15 @@ Cultural Context: [Brief cultural note]
 Cooking Time: [Total time]
 
 Separate each recipe with "---"."""
-        
+
         if max_length and len(prompt) > max_length:
             # Simplified prompt for providers with token limits
-            prompt = f"Create 3 African recipes using {ingredient_list}. Include name, origin, ingredients, instructions, and cooking time for each. Separate with ---."
-        
+            simplified_user_context = ""
+            if user_data and hasattr(user_data, 'health_goals') and user_data.health_goals:
+                simplified_user_context = f" User prefers: {', '.join(user_data.health_goals[:2])}"
+
+            prompt = f"Create 3 African recipes using {ingredient_list}.{simplified_user_context} Include name, origin, ingredients, instructions, and cooking time for each. Separate with ---."
+
         return prompt
     
     @staticmethod
@@ -510,102 +540,32 @@ Separate each recipe with "---"."""
         return nutrition
     
     @staticmethod
-    def _generate_mock_recipes(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool) -> List[Dict[str, Any]]:
-        """Generate mock African recipes when all AI providers fail"""
-        
-        ingredient_list = ", ".join(pantry_ingredients)
-        
-        mock_recipes = [
-            {
-                "name": f"Jollof Rice with {pantry_ingredients[0] if pantry_ingredients else 'Vegetables'}",
-                "origin": "West Africa",
-                "ingredients": [
-                    "2 cups jasmine rice",
-                    "1 can diced tomatoes",
-                    "1 large onion, diced",
-                    "3 cloves garlic, minced"
-                ] + [f"1 cup {ing}" for ing in pantry_ingredients[:3]],
-                "instructions": [
-                    "Heat oil in a large pot over medium heat",
-                    "Sauté onions until golden brown",
-                    "Add garlic and cook for 1 minute",
-                    "Add tomatoes and selected ingredients",
-                    "Add rice and stock, bring to boil",
-                    "Reduce heat, cover and simmer for 20-25 minutes",
-                    "Let stand 5 minutes before serving"
-                ],
-                "cooking_time": "45 minutes",
-                "health_benefits": "Rich in complex carbohydrates, provides sustained energy, contains antioxidants from tomatoes",
-                "cultural_context": "Jollof rice is a beloved West African dish, often served at celebrations and family gatherings",
-                "nutrition_info": {
-                    "calories": 420,
-                    "protein": "12g",
-                    "fiber": "8g",
-                    "vitamin_c": "25mg"
-                } if is_premium else None,
-                "tags": ["west-african", "rice", "one-pot"]
-            },
-            {
-                "name": f"Ethiopian Spiced Lentils with {pantry_ingredients[1] if len(pantry_ingredients) > 1 else 'Herbs'}",
-                "origin": "Ethiopia",
-                "ingredients": [
-                    "1 cup red lentils",
-                    "2 tbsp berbere spice blend",
-                    "1 large onion, chopped",
-                    "3 cloves garlic, minced"
-                ] + [f"1/2 cup {ing}" for ing in pantry_ingredients[:2]],
-                "instructions": [
-                    "Rinse lentils and set aside",
-                    "Sauté onions until soft and golden",
-                    "Add garlic and berbere spice, cook 1 minute",
-                    "Add selected ingredients and lentils",
-                    "Add 3 cups water, bring to boil",
-                    "Simmer 20-25 minutes until lentils are tender",
-                    "Season with salt and serve hot"
-                ],
-                "cooking_time": "35 minutes",
-                "health_benefits": "High in plant protein and fiber, supports digestive health, rich in iron and folate",
-                "cultural_context": "Misir wot is a staple Ethiopian dish, traditionally served with injera bread",
-                "nutrition_info": {
-                    "calories": 280,
-                    "protein": "18g",
-                    "fiber": "12g",
-                    "iron": "6mg"
-                } if is_premium else None,
-                "tags": ["ethiopian", "lentils", "spicy", "vegetarian"]
-            },
-            {
-                "name": f"Kenyan Sukuma Wiki with {pantry_ingredients[0] if pantry_ingredients else 'Onions'}",
-                "origin": "Kenya",
-                "ingredients": [
-                    "1 bunch collard greens (sukuma wiki)",
-                    "2 medium tomatoes, chopped",
-                    "1 large onion, sliced",
-                    "2 cloves garlic, minced"
-                ] + [f"1/2 cup {ing}" for ing in pantry_ingredients[:2]],
-                "instructions": [
-                    "Wash and chop collard greens into strips",
-                    "Heat oil in a large pan",
-                    "Sauté onions until translucent",
-                    "Add garlic and selected ingredients",
-                    "Add tomatoes, cook until soft",
-                    "Add collard greens, stir well",
-                    "Cover and cook 10-15 minutes until tender"
-                ],
-                "cooking_time": "25 minutes",
-                "health_benefits": "Excellent source of vitamins A, C, and K, supports immune system and bone health",
-                "cultural_context": "Sukuma wiki means 'push the week' in Swahili, a nutritious and affordable daily meal",
-                "nutrition_info": {
-                    "calories": 150,
-                    "protein": "8g",
-                    "fiber": "6g",
-                    "vitamin_a": "200% DV"
-                } if is_premium else None,
-                "tags": ["kenyan", "greens", "healthy", "quick"]
-            }
-        ]
-        
-        return mock_recipes
+    def _generate_mock_recipes(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool, user_data: Any = None) -> List[Dict[str, Any]]:
+        """Generate mock African recipes when all AI providers fail - using dynamic generation"""
+        try:
+            # Try to generate recipes dynamically using the multi-AI service
+            recipes, _ = asyncio.run(MultiAIService.generate_recipes(
+                pantry_ingredients=pantry_ingredients,
+                health_goals=health_goals,
+                is_premium=is_premium
+            ))
+            return recipes
+        except Exception as e:
+            print(f"Dynamic mock recipe generation failed: {e}")
+            # Fallback to very basic generic recipes
+            return [
+                {
+                    "name": f"Simple {pantry_ingredients[0] if pantry_ingredients else 'Ingredient'} Dish",
+                    "origin": "African",
+                    "ingredients": pantry_ingredients[:5] if pantry_ingredients else ["Basic ingredients"],
+                    "instructions": ["Prepare ingredients", "Cook according to traditional methods", "Serve hot"],
+                    "cooking_time": "30 minutes",
+                    "health_benefits": "Provides essential nutrients",
+                    "cultural_context": "Traditional African cooking",
+                    "nutrition_info": None,
+                    "tags": ["african", "traditional"]
+                }
+            ]
     
     @staticmethod
     def _update_provider_status(provider: AIProvider, success: bool, error: str = None):

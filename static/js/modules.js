@@ -4,6 +4,47 @@
 // Global Variables
 let chatOpen = false;
 
+// Modal Manager for intelligent modal handling
+const ModalManager = {
+    activeModals: [],
+
+    closeModal(element) {
+        // Find the modal element
+        let modal = element;
+        while (modal && !modal.classList.contains('modal')) {
+            modal = modal.parentElement;
+        }
+
+        if (modal) {
+            // Add fade out animation
+            modal.style.animation = 'modalFadeOut 0.3s ease forwards';
+            setTimeout(() => {
+                modal.remove();
+                // Remove from active modals
+                const index = this.activeModals.indexOf(modal);
+                if (index > -1) {
+                    this.activeModals.splice(index, 1);
+                }
+            }, 300);
+        }
+    },
+
+    closeAllModals() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.style.animation = 'modalFadeOut 0.3s ease forwards';
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        });
+        this.activeModals = [];
+    },
+
+    registerModal(modal) {
+        this.activeModals.push(modal);
+    }
+};
+
 // Application State
 const AppState = {
     currentPage: 'home',
@@ -86,57 +127,308 @@ async function apiCall(endpoint, options = {}) {
 
 // Navigation Management
 const Navigation = {
+    isNavigating: false,
+    navListeners: new Map(),
+
     init() {
+        // Clean up any existing listeners first
+        this.cleanup();
+
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+            const clickHandler = (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+
                 const page = link.getAttribute('data-page');
-                this.showPage(page);
-            });
+                if (page && !this.isNavigating) {
+                    this.showPage(page);
+                }
+            };
+
+            // Store reference for cleanup
+            this.navListeners.set(link, clickHandler);
+
+            // Add event listener with passive option for better performance
+            link.addEventListener('click', clickHandler, { passive: false });
         });
+
+        console.log('Navigation initialized with', navLinks.length, 'links');
     },
-    
+
+    cleanup() {
+        // Remove all existing event listeners
+        this.navListeners.forEach((handler, link) => {
+            link.removeEventListener('click', handler);
+        });
+        this.navListeners.clear();
+    },
+
     showPage(pageId) {
-        // Hide all pages
-        document.querySelectorAll('.page-module').forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // Update nav links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-        });
-        
-        // Show selected page
-        const targetPage = document.getElementById(pageId);
-        const targetLink = document.querySelector(`[data-page="${pageId}"]`);
-        
-        if (targetPage && targetLink) {
-            targetPage.classList.add('active');
-            targetLink.classList.add('active');
-            AppState.currentPage = pageId;
-            
-            // Initialize page-specific functionality
-            if (pageId === 'generate') {
-                RecipeGenerator.init();
-            } else if (pageId === 'saved') {
-                loadSavedRecipes();
-            }
+        // Prevent multiple simultaneous navigations
+        if (this.isNavigating) {
+            console.log('Navigation already in progress, ignoring:', pageId);
+            return;
         }
+
+        // Validate pageId
+        if (!pageId || typeof pageId !== 'string') {
+            console.error('Invalid pageId:', pageId);
+            return;
+        }
+
+        this.isNavigating = true;
+        console.log('Navigating to page:', pageId);
+
+        // Add loading state to target nav link
+        const targetLink = document.querySelector(`[data-page="${pageId}"]`);
+        if (targetLink) {
+            targetLink.classList.add('loading');
+        }
+
+        try {
+            // Hide all pages with animation
+            document.querySelectorAll('.page-module').forEach(page => {
+                if (page.id !== pageId) {
+                    page.classList.remove('active');
+                }
+            });
+
+            // Update nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected page
+            const targetPage = document.getElementById(pageId);
+
+            if (targetPage && targetLink) {
+                // Add a small delay for smooth transition
+                setTimeout(() => {
+                    targetPage.classList.add('active');
+                    targetLink.classList.add('active');
+                    targetLink.classList.remove('loading'); // Remove loading state
+                    AppState.currentPage = pageId;
+
+                    // Initialize page-specific functionality
+                    this.initializePage(pageId);
+
+                    console.log('Successfully navigated to:', pageId);
+                }, 50);
+            } else {
+                console.error('Target page or link not found:', pageId, targetPage, targetLink);
+                if (targetLink) {
+                    targetLink.classList.remove('loading');
+                }
+                showNotification('Page not found', 'error');
+            }
+        } catch (error) {
+            console.error('Navigation error:', error);
+            if (targetLink) {
+                targetLink.classList.remove('loading');
+            }
+            showNotification('Navigation failed', 'error');
+        } finally {
+            // Reset navigation flag after a short delay
+            setTimeout(() => {
+                this.isNavigating = false;
+            }, 300);
+        }
+    },
+
+    initializePage(pageId) {
+        try {
+            switch (pageId) {
+                case 'generate':
+                    if (typeof RecipeGenerator !== 'undefined' && RecipeGenerator.init) {
+                        RecipeGenerator.init();
+                    }
+                    break;
+                case 'saved':
+                    if (typeof loadSavedRecipes === 'function') {
+                        loadSavedRecipes();
+                    }
+                    break;
+                case 'discover':
+                    if (typeof HighlightRecipes !== 'undefined' && HighlightRecipes.loadHighlights) {
+                        HighlightRecipes.loadHighlights();
+                    }
+                    break;
+                case 'kitchen':
+                    // Kitchen page specific initialization if needed
+                    break;
+                case 'home':
+                    // Home page specific initialization if needed
+                    break;
+                default:
+                    console.log('No specific initialization for page:', pageId);
+            }
+        } catch (error) {
+            console.error('Page initialization error:', error);
+        }
+    },
+
+    // Force navigation (bypasses the isNavigating check)
+    forceNavigate(pageId) {
+        this.isNavigating = false;
+        this.showPage(pageId);
     }
 };
 
-// Global navigation function for HTML onclick
-window.showPage = (pageId) => Navigation.showPage(pageId);
+// Global navigation function for HTML onclick with error handling
+window.showPage = (pageId) => {
+    try {
+        if (typeof Navigation !== 'undefined' && Navigation.showPage) {
+            Navigation.showPage(pageId);
+        } else {
+            console.error('Navigation module not available');
+            // Fallback: direct page switching
+            const targetPage = document.getElementById(pageId);
+            const targetLink = document.querySelector(`[data-page="${pageId}"]`);
+
+            if (targetPage && targetLink) {
+                // Hide all pages
+                document.querySelectorAll('.page-module').forEach(page => page.classList.remove('active'));
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+
+                // Show target page
+                targetPage.classList.add('active');
+                targetLink.classList.add('active');
+            }
+        }
+    } catch (error) {
+        console.error('Global navigation error:', error);
+    }
+};
 
 // Recipe Generator Module
 const RecipeGenerator = {
     ingredientDatabase: {
-        vegetables: ['Tomatoes', 'Onions', 'Carrots', 'Spinach', 'Kale', 'Sukuma Wiki', 'Cabbage', 'Bell Peppers'],
-        proteins: ['Chicken', 'Beef', 'Fish', 'Beans', 'Lentils', 'Eggs'],
-        grains: ['Rice', 'Maize', 'Wheat', 'Millet', 'Sorghum'],
-        spices: ['Ginger', 'Garlic', 'Cumin', 'Coriander', 'Turmeric']
+        vegetables: [
+            'Tomatoes', 'Onions', 'Carrots', 'Spinach', 'Kale', 'Sukuma Wiki', 'Cabbage', 'Bell Peppers',
+            'Eggplant', 'Zucchini', 'Broccoli', 'Cauliflower', 'Green Beans', 'Peas', 'Corn', 'Potatoes',
+            'Sweet Potatoes', 'Pumpkin', 'Butternut Squash', 'Lettuce', 'Arugula', 'Celery', 'Cucumbers',
+            'Radishes', 'Beets', 'Turnips', 'Parsnips', 'Leeks', 'Fennel', 'Artichokes', 'Asparagus',
+            'Mushrooms', 'Shiitake', 'Portobello', 'Button Mushrooms', 'Avocados', 'Lemons', 'Limes',
+            'Oranges', 'Grapefruits', 'Apples', 'Bananas', 'Berries', 'Strawberries', 'Blueberries',
+            'Raspberries', 'Pineapple', 'Mango', 'Papaya', 'Kiwi', 'Grapes', 'Pears', 'Plums', 'Peaches',
+            'Cherries', 'Melons', 'Watermelon', 'Cantaloupe', 'Honeydew', 'Coconut', 'Okra', 'Bitter Leaf',
+            'Ugu Leaf', 'Waterleaf', 'Fluted Pumpkin', 'African Spinach', 'Jute Leaves', 'Cassava Leaves'
+        ],
+        proteins: [
+            'Chicken', 'Beef', 'Fish', 'Beans', 'Lentils', 'Eggs', 'Turkey', 'Duck', 'Goat', 'Lamb',
+            'Pork', 'Shrimp', 'Prawns', 'Crab', 'Lobster', 'Salmon', 'Tuna', 'Tilapia', 'Catfish',
+            'Sardines', 'Mackerel', 'Cod', 'Haddock', 'Tofu', 'Tempeh', 'Seitan', 'Quinoa', 'Chickpeas',
+            'Black Beans', 'Kidney Beans', 'Pinto Beans', 'Lima Beans', 'Split Peas', 'Green Peas',
+            'Peanuts', 'Almonds', 'Walnuts', 'Cashews', 'Pistachios', 'Hazelnuts', 'Macadamia Nuts',
+            'Brazil Nuts', 'Chestnuts', 'Sunflower Seeds', 'Pumpkin Seeds', 'Chia Seeds', 'Flax Seeds',
+            'Hemp Seeds', 'Sesame Seeds', 'Egg Whites', 'Egg Yolks', 'Duck Eggs', 'Quail Eggs',
+            'Turkey Eggs', 'Goose Eggs', 'Smoked Fish', 'Dried Fish', 'Canned Tuna', 'Canned Salmon',
+            'Anchovies', 'Herring', 'Trout', 'Bass', 'Snapper', 'Grouper', 'Halibut', 'Swordfish'
+        ],
+        grains: [
+            'Rice', 'Maize', 'Wheat', 'Millet', 'Sorghum', 'Barley', 'Oats', 'Quinoa', 'Buckwheat',
+            'Amaranth', 'Teff', 'Spelt', 'Rye', 'Farro', 'Bulgur', 'Couscous', 'Pasta', 'Noodles',
+            'Bread', 'Baguette', 'Sourdough', 'Whole Wheat Bread', 'White Bread', 'Rye Bread',
+            'Pita Bread', 'Tortillas', 'Corn Tortillas', 'Flour Tortillas', 'Naan', 'Chapati',
+            'Injera', 'Fufu', 'Ugali', 'Banku', 'Sadza', 'Nsima', 'Pap', 'Mielie Pap', 'Cream of Wheat',
+            'Semolina', 'Polenta', 'Grits', 'Cornmeal', 'Wheat Germ', 'Bran', 'Oat Bran', 'Rice Bran'
+        ],
+        spices: [
+            'Ginger', 'Garlic', 'Cumin', 'Coriander', 'Turmeric', 'Black Pepper', 'White Pepper',
+            'Red Pepper Flakes', 'Cayenne Pepper', 'Paprika', 'Smoked Paprika', 'Chili Powder',
+            'Curry Powder', 'Garam Masala', 'Ras el Hanout', 'Za\'atar', 'Dukkah', 'Baharat',
+            'Berbere', 'Harissa', 'Cardamom', 'Cinnamon', 'Nutmeg', 'Cloves', 'Allspice', 'Star Anise',
+            'Fennel Seeds', 'Caraway Seeds', 'Mustard Seeds', 'Fenugreek', 'Saffron', 'Vanilla',
+            'Rosemary', 'Thyme', 'Oregano', 'Basil', 'Parsley', 'Cilantro', 'Mint', 'Sage', 'Tarragon',
+            'Dill', 'Chives', 'Bay Leaves', 'Curry Leaves', 'Kaffir Lime Leaves', 'Lemongrass',
+            'Galangal', 'Turmeric Root', 'Wasabi', 'Horseradish', 'Mustard', 'Vinegar', 'Balsamic Vinegar',
+            'Apple Cider Vinegar', 'Rice Vinegar', 'White Vinegar', 'Red Wine Vinegar', 'Soy Sauce',
+            'Tamari', 'Coconut Aminos', 'Fish Sauce', 'Worcestershire Sauce', 'Hot Sauce', 'Sriracha',
+            'Tabasco', 'Goat Pepper Sauce', 'Shito', 'Nando\'s Sauce', 'Peri Peri Sauce'
+        ],
+        dairy: [
+            'Milk', 'Whole Milk', 'Skim Milk', '2% Milk', 'Buttermilk', 'Cream', 'Heavy Cream',
+            'Whipping Cream', 'Half and Half', 'Sour Cream', 'Greek Yogurt', 'Plain Yogurt',
+            'Vanilla Yogurt', 'Cottage Cheese', 'Ricotta', 'Mozzarella', 'Cheddar', 'Parmesan',
+            'Pecorino', 'Gouda', 'Brie', 'Camembert', 'Blue Cheese', 'Feta', 'Goat Cheese',
+            'Sheep Cheese', 'Butter', 'Ghee', 'Margarine', 'Cream Cheese', 'Mascarpone',
+            'Evaporated Milk', 'Condensed Milk', 'Powdered Milk', 'Ice Cream', 'Frozen Yogurt',
+            'Sherbet', 'Gelato', 'Custard', 'Pudding', 'Flan', 'Crème Brûlée'
+        ],
+        fruits: [
+            'Apples', 'Bananas', 'Oranges', 'Lemons', 'Limes', 'Grapefruits', 'Tangerines',
+            'Mandarins', 'Clementines', 'Kumquats', 'Pears', 'Peaches', 'Plums', 'Apricots',
+            'Nectarines', 'Cherries', 'Strawberries', 'Blueberries', 'Raspberries', 'Blackberries',
+            'Cranberries', 'Gooseberries', 'Currants', 'Elderberries', 'Mulberries', 'Boysenberries',
+            'Loganberries', 'Marionberries', 'Pineapple', 'Mango', 'Papaya', 'Guava', 'Passion Fruit',
+            'Dragon Fruit', 'Star Fruit', 'Durian', 'Rambutan', 'Lychee', 'Longan', 'Jackfruit',
+            'Breadfruit', 'Plantain', 'Kiwi', 'Persimmon', 'Pomegranate', 'Fig', 'Date', 'Prune',
+            'Raisin', 'Sultana', 'Currant', 'Coconut', 'Avocado', 'Olive', 'Tomato', 'Cucumber',
+            'Zucchini', 'Eggplant', 'Bell Pepper', 'Chili Pepper', 'Jalapeño', 'Habanero', 'Serrano'
+        ],
+        herbs: [
+            'Basil', 'Parsley', 'Cilantro', 'Mint', 'Oregano', 'Thyme', 'Rosemary', 'Sage',
+            'Tarragon', 'Dill', 'Chives', 'Scallions', 'Green Onions', 'Leeks', 'Shallots',
+            'Garlic', 'Ginger', 'Turmeric', 'Lemongrass', 'Kaffir Lime Leaves', 'Bay Leaves',
+            'Curry Leaves', 'Coriander Leaves', 'Fenugreek Leaves', 'Spinach', 'Kale', 'Collard Greens',
+            'Mustard Greens', 'Turnip Greens', 'Beet Greens', 'Swiss Chard', 'Arugula', 'Watercress',
+            'Endive', 'Escarole', 'Frisée', 'Radicchio', 'Chicory', 'Dandelion Greens', 'Sorrel',
+            'Purslane', 'Malabar Spinach', 'New Zealand Spinach', 'Amaranth Leaves', 'Orach',
+            'Lamb\'s Quarters', 'Good King Henry', 'Fat Hen', 'Strawberry Spinach', 'Tepary Beans',
+            'Winged Beans', 'Yard Long Beans', 'Asparagus Beans', 'Snake Beans', 'French Beans'
+        ],
+        oils: [
+            'Olive Oil', 'Extra Virgin Olive Oil', 'Vegetable Oil', 'Canola Oil', 'Sunflower Oil',
+            'Safflower Oil', 'Grapeseed Oil', 'Avocado Oil', 'Coconut Oil', 'Palm Oil', 'Palm Kernel Oil',
+            'Sesame Oil', 'Peanut Oil', 'Corn Oil', 'Soybean Oil', 'Rice Bran Oil', 'Wheat Germ Oil',
+            'Flaxseed Oil', 'Hemp Oil', 'Pumpkin Seed Oil', 'Walnut Oil', 'Hazelnut Oil', 'Almond Oil',
+            'Macadamia Oil', 'Argan Oil', 'Jojoba Oil', 'Rosehip Oil', 'Evening Primrose Oil',
+            'Borage Oil', 'Black Currant Oil', 'Fish Oil', 'Cod Liver Oil', 'Krill Oil', 'Butter',
+            'Ghee', 'Lard', 'Tallow', 'Duck Fat', 'Goose Fat', 'Schmaltz'
+        ],
+        sweeteners: [
+            'Sugar', 'White Sugar', 'Brown Sugar', 'Powdered Sugar', 'Confectioners Sugar',
+            'Granulated Sugar', 'Caster Sugar', 'Superfine Sugar', 'Demerara Sugar', 'Turbinado Sugar',
+            'Raw Sugar', 'Coconut Sugar', 'Palm Sugar', 'Date Sugar', 'Maple Syrup', 'Honey',
+            'Agave Nectar', 'Corn Syrup', 'High Fructose Corn Syrup', 'Molasses', 'Blackstrap Molasses',
+            'Sorghum Syrup', 'Golden Syrup', 'Treacle', 'Stevia', 'Sucralose', 'Aspartame',
+            'Saccharin', 'Acesulfame Potassium', 'Erythritol', 'Xylitol', 'Sorbitol', 'Maltitol',
+            'Lactitol', 'Isomalt', 'Mannitol', 'Fruit Juice Concentrate', 'Apple Juice Concentrate',
+            'Grape Juice Concentrate', 'Pineapple Juice Concentrate'
+        ],
+        baking: [
+            'Flour', 'All-Purpose Flour', 'Bread Flour', 'Cake Flour', 'Pastry Flour', 'Whole Wheat Flour',
+            'White Flour', 'Self-Rising Flour', 'Cake Mix', 'Baking Powder', 'Baking Soda', 'Yeast',
+            'Active Dry Yeast', 'Instant Yeast', 'Fresh Yeast', 'Sourdough Starter', 'Salt', 'Sea Salt',
+            'Kosher Salt', 'Table Salt', 'Himalayan Pink Salt', 'Black Salt', 'Vanilla Extract',
+            'Almond Extract', 'Lemon Extract', 'Coconut Extract', 'Maple Extract', 'Chocolate Chips',
+            'White Chocolate Chips', 'Dark Chocolate Chips', 'Milk Chocolate Chips', 'Butterscotch Chips',
+            'Cinnamon Chips', 'Cocoa Powder', 'Unsweetened Cocoa Powder', 'Dutch Process Cocoa',
+            'Carob Powder', 'Sprinkles', 'Colored Sugar', 'Food Coloring', 'Gel Food Coloring',
+            'Liquid Food Coloring', 'Natural Food Dyes', 'Beet Powder', 'Turmeric Powder', 'Saffron'
+        ],
+        beverages: [
+            'Water', 'Mineral Water', 'Sparkling Water', 'Club Soda', 'Tonic Water', 'Coffee',
+            'Instant Coffee', 'Ground Coffee', 'Espresso', 'Cappuccino', 'Latte', 'Tea', 'Black Tea',
+            'Green Tea', 'White Tea', 'Oolong Tea', 'Herbal Tea', 'Chamomile Tea', 'Peppermint Tea',
+            'Ginger Tea', 'Lemon Tea', 'Milk', 'Whole Milk', 'Skim Milk', '2% Milk', 'Almond Milk',
+            'Soy Milk', 'Oat Milk', 'Coconut Milk', 'Rice Milk', 'Hemp Milk', 'Cashew Milk',
+            'Coconut Water', 'Fruit Juices', 'Orange Juice', 'Apple Juice', 'Grape Juice',
+            'Pineapple Juice', 'Mango Juice', 'Passion Fruit Juice', 'Guava Juice', 'Beer', 'Wine',
+            'Red Wine', 'White Wine', 'Rosé Wine', 'Champagne', 'Sparkling Wine', 'Whiskey', 'Vodka',
+            'Rum', 'Gin', 'Tequila', 'Brandy', 'Cognac', 'Liqueur', 'Baileys', 'Kahlúa', 'Amaretto'
+        ],
+        condiments: [
+            'Ketchup', 'Mustard', 'Mayonnaise', 'Relish', 'Pickles', 'Dill Pickles', 'Sweet Pickles',
+            'Bread and Butter Pickles', 'Chutney', 'Mango Chutney', 'Tomato Chutney', 'Onion Chutney',
+            'Mint Chutney', 'Coriander Chutney', 'Tamarind Chutney', 'Pesto', 'Basil Pesto', 'Sun-Dried Tomato Pesto',
+            'Arugula Pesto', 'Spinach Pesto', 'Tapenade', 'Olive Tapenade', 'Artichoke Tapenade',
+            'Hummus', 'Baba Ganoush', 'Tzatziki', 'Raita', 'Salsa', 'Pico de Gallo', 'Guacamole',
+            'Bean Dip', 'Spinach Dip', 'Artichoke Dip', 'French Onion Dip', 'Ranch Dip', 'Blue Cheese Dip',
+            'Thousand Island Dressing', 'Russian Dressing', 'Caesar Dressing', 'Italian Dressing',
+            'French Dressing', 'Greek Dressing', 'Balsamic Vinaigrette', 'Oil and Vinegar Dressing'
+        ]
     },
     
     init() {
@@ -236,6 +528,11 @@ const RecipeGenerator = {
             return;
         }
 
+        // Check subscription limits for recipe generation
+        if (!this.checkGenerationLimits()) {
+            return;
+        }
+
         const generateBtn = document.querySelector('button[onclick="generateRecipes()"]');
         if (generateBtn) {
             generateBtn.classList.add('loading');
@@ -258,13 +555,16 @@ const RecipeGenerator = {
             });
 
             if (response.recipes && response.recipes.length > 0) {
-                // For guest users, only show 1 recipe with login prompt
-                const recipesToShow = AppState.currentUser ? response.recipes : response.recipes.slice(0, 1);
+                // Apply subscription-based limits
+                const recipesToShow = this.applySubscriptionLimits(response.recipes);
                 this.displayRecipes(recipesToShow, !AppState.currentUser);
-                
-                const count = AppState.currentUser ? response.recipes.length : 1;
+
+                const count = recipesToShow.length;
                 showNotification(`Generated ${count} recipe${count > 1 ? 's' : ''}!`, 'success');
-                
+
+                // Track usage
+                this.trackGenerationUsage();
+
                 if (!AppState.currentUser && response.recipes.length > 1) {
                     setTimeout(() => {
                         showNotification(`${response.recipes.length - 1} more recipes available! Login to view all.`, 'info');
@@ -279,7 +579,7 @@ const RecipeGenerator = {
             console.error('Error details:', error.message);
             console.error('Selected ingredients:', AppState.selectedIngredients);
             console.error('Request data that was sent:', requestData);
-            
+
             // Check if ingredients array is empty
             if (!AppState.selectedIngredients || AppState.selectedIngredients.length === 0) {
                 showNotification('Please select ingredients first before generating recipes', 'warning');
@@ -293,19 +593,91 @@ const RecipeGenerator = {
             }
         }
     },
+
+    checkGenerationLimits() {
+        if (!AppState.currentUser) {
+            // Guest users get 1 recipe per session
+            const guestUsage = parseInt(localStorage.getItem('guest_recipes_generated') || '0');
+            if (guestUsage >= 1) {
+                showNotification('Guest limit reached! Login for unlimited recipes.', 'warning');
+                Auth.showLoginModal();
+                return false;
+            }
+            return true;
+        }
+
+        // Premium users get unlimited recipes
+        if (AppState.currentUser.is_premium) {
+            return true;
+        }
+
+        // Basic users get 5 recipes per day
+        const today = new Date().toDateString();
+        const usageKey = `daily_recipes_${today}`;
+        const dailyUsage = parseInt(localStorage.getItem(usageKey) || '0');
+
+        if (dailyUsage >= 5) {
+            showNotification('Daily recipe limit reached! Upgrade to Premium for unlimited access.', 'warning');
+            return false;
+        }
+
+        return true;
+    },
+
+    applySubscriptionLimits(recipes) {
+        if (!AppState.currentUser) {
+            // Guest users see only 1 recipe
+            return recipes.slice(0, 1);
+        }
+
+        if (!AppState.currentUser.is_premium) {
+            // Basic users see up to 3 recipes
+            return recipes.slice(0, 3);
+        }
+
+        // Premium users see all recipes
+        return recipes;
+    },
+
+    trackGenerationUsage() {
+        if (!AppState.currentUser) {
+            // Track guest usage
+            const guestUsage = parseInt(localStorage.getItem('guest_recipes_generated') || '0');
+            localStorage.setItem('guest_recipes_generated', (guestUsage + 1).toString());
+        } else if (!AppState.currentUser.is_premium) {
+            // Track basic user daily usage
+            const today = new Date().toDateString();
+            const usageKey = `daily_recipes_${today}`;
+            const dailyUsage = parseInt(localStorage.getItem(usageKey) || '0');
+            localStorage.setItem(usageKey, (dailyUsage + 1).toString());
+        }
+    },
     
     displayRecipes(recipes, isGuest = false) {
-        const container = document.querySelector('#generate .module-card');
-        if (!container) return;
-        
-        let resultsHtml = '<div class="recipe-results"><h3><i class="fas fa-magic"></i> Your AI-Generated Recipes</h3>';
-        
+        // Create or find the results container below the generation form
+        let resultsContainer = document.getElementById('generated-recipes-container');
+
+        if (!resultsContainer) {
+            // Create the container below the generation form
+            const generateSection = document.getElementById('generate');
+            if (generateSection) {
+                resultsContainer = document.createElement('div');
+                resultsContainer.id = 'generated-recipes-container';
+                resultsContainer.className = 'generated-recipes-section';
+                generateSection.appendChild(resultsContainer);
+            }
+        }
+
+        if (!resultsContainer) return;
+
+        let resultsHtml = '<div class="recipe-results-section"><h3><i class="fas fa-magic"></i> Your AI-Generated Recipes</h3>';
+
         if (isGuest && recipes.length === 1) {
             resultsHtml += '<div class="guest-notice"><p><i class="fas fa-info-circle"></i> Guest preview - Login to generate unlimited recipes!</p></div>';
         }
-        
+
         resultsHtml += '<div class="recipe-grid">';
-        
+
         recipes.forEach((recipe, index) => {
             resultsHtml += `
                 <div class="recipe-card">
@@ -323,13 +695,16 @@ const RecipeGenerator = {
                             <button class="btn-primary" onclick="viewRecipe(${index})">
                                 <i class="fas fa-eye"></i> View Recipe
                             </button>
+                            <button class="btn-outline" onclick="startCookingMode(${index})">
+                                <i class="fas fa-play"></i> Start Cooking
+                            </button>
                             ${AppState.currentUser ? `<button class="btn-outline" onclick="saveRecipe(${index})"><i class="fas fa-bookmark"></i> Save</button>` : ''}
                         </div>
                     </div>
                 </div>
             `;
         });
-        
+
         if (isGuest) {
             resultsHtml += `
                 <div class="recipe-card login-prompt">
@@ -350,12 +725,17 @@ const RecipeGenerator = {
                 </div>
             `;
         }
-        
+
         resultsHtml += '</div></div>';
-        container.insertAdjacentHTML('beforeend', resultsHtml);
-        
+        resultsContainer.innerHTML = resultsHtml;
+
         // Store recipes globally for viewing
         window.currentRecipes = recipes;
+
+        // Scroll to results
+        setTimeout(() => {
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 500);
     }
 };
 
@@ -363,11 +743,12 @@ const RecipeGenerator = {
 const Auth = {
     showLoginModal() {
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.className = 'modal auth-modal';
         modal.style.display = 'block';
         modal.innerHTML = `
+            <div class="modal-overlay" onclick="ModalManager.closeModal(this)"></div>
             <div class="modal-content">
-                <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                <span class="close" onclick="ModalManager.closeModal(this)" title="Close">&times;</span>
                 <div class="auth-form">
                     <h2>Login to KE-ROUMA</h2>
                     <form id="loginForm">
@@ -383,22 +764,30 @@ const Auth = {
                             <i class="fas fa-sign-in-alt"></i> Login
                         </button>
                     </form>
-                    <p>Don't have an account? <a href="#" onclick="this.parentElement.parentElement.parentElement.remove(); Auth.showRegisterModal();">Register here</a></p>
+                    <p>Don't have an account? <a href="#" onclick="ModalManager.closeModal(this); Auth.showRegisterModal();">Register here</a></p>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
-        
+        ModalManager.registerModal(modal);
+
         modal.querySelector('#loginForm').addEventListener('submit', Auth.handleLogin.bind(Auth));
+
+        // Focus on first input
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input');
+            if (firstInput) firstInput.focus();
+        }, 100);
     },
 
     showRegisterModal() {
         const modal = document.createElement('div');
-        modal.className = 'modal';
+        modal.className = 'modal auth-modal';
         modal.style.display = 'block';
         modal.innerHTML = `
+            <div class="modal-overlay" onclick="ModalManager.closeModal(this)"></div>
             <div class="modal-content">
-                <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                <span class="close" onclick="ModalManager.closeModal(this)" title="Close">&times;</span>
                 <div class="auth-form">
                     <h2>Join KE-ROUMA</h2>
                     <form id="registerForm">
@@ -418,33 +807,48 @@ const Auth = {
                             <i class="fas fa-user-plus"></i> Register
                         </button>
                     </form>
-                    <p>Already have an account? <a href="#" onclick="this.parentElement.parentElement.parentElement.remove(); Auth.showLoginModal();">Login here</a></p>
+                    <p>Already have an account? <a href="#" onclick="ModalManager.closeModal(this); Auth.showLoginModal();">Login here</a></p>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
-        
+        ModalManager.registerModal(modal);
+
         modal.querySelector('#registerForm').addEventListener('submit', Auth.handleRegister.bind(Auth));
+
+        // Focus on first input
+        setTimeout(() => {
+            const firstInput = modal.querySelector('input');
+            if (firstInput) firstInput.focus();
+        }, 100);
     },
 
     async handleLogin(event) {
         event.preventDefault();
         const phone_number = document.getElementById('loginPhone').value;
         const password = document.getElementById('loginPassword').value;
-        
+
         try {
             const response = await apiCall(API_ENDPOINTS.auth.login, {
                 method: 'POST',
                 body: { phone_number, password }
             });
-            
+
             AppState.setUser(response.user);
             localStorage.setItem('access_token', response.access_token);
             localStorage.setItem('refresh_token', response.refresh_token);
             updateAuthUI();
             showNotification('Login successful!', 'success');
-            document.querySelector('.modal').remove();
-            
+
+            // Close modal with animation
+            const modal = document.querySelector('.modal');
+            if (modal) {
+                modal.style.animation = 'modalFadeOut 0.3s ease forwards';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+
         } catch (error) {
             showNotification(`Login failed: ${error.message}`, 'error');
         }
@@ -455,20 +859,28 @@ const Auth = {
         const username = document.getElementById('registerUsername').value;
         const phone_number = document.getElementById('registerPhone').value;
         const password = document.getElementById('registerPassword').value;
-        
+
         try {
             const response = await apiCall(API_ENDPOINTS.auth.register, {
                 method: 'POST',
                 body: { username, phone_number, password }
             });
-            
+
             AppState.setUser(response.user);
             localStorage.setItem('access_token', response.access_token);
             localStorage.setItem('refresh_token', response.refresh_token);
             updateAuthUI();
             showNotification('Registration successful!', 'success');
-            document.querySelector('.modal').remove();
-            
+
+            // Close modal with animation
+            const modal = document.querySelector('.modal');
+            if (modal) {
+                modal.style.animation = 'modalFadeOut 0.3s ease forwards';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+
         } catch (error) {
             showNotification(`Registration failed: ${error.message}`, 'error');
         }
@@ -1195,6 +1607,89 @@ function quickAction(type) {
     }
 }
 
+// Missing function definitions
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function filterIngredients() {
+    const searchTerm = document.getElementById('ingredientSearch').value.toLowerCase();
+    const ingredientOptions = document.querySelectorAll('.ingredient-option');
+
+    ingredientOptions.forEach(option => {
+        const ingredientName = option.textContent.toLowerCase();
+        if (ingredientName.includes(searchTerm)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+function startCookingMode() {
+    if (!window.currentRecipes || window.currentRecipes.length === 0) {
+        showNotification('Please generate a recipe first', 'warning');
+        return;
+    }
+    KitchenWidget.startCooking(window.currentRecipes[0]);
+}
+
+function setTimer() {
+    KitchenWidget.setTimer();
+}
+
+function voiceCommands() {
+    KitchenWidget.voiceCommand();
+}
+
+function nutritionInfo() {
+    showNotification('Nutrition analysis coming soon!', 'info');
+}
+
+function mealPlanner() {
+    showNotification('Meal planner coming soon!', 'info');
+}
+
+function shoppingList() {
+    showNotification('Shopping list coming soon!', 'info');
+}
+
+function contactSales() {
+    showNotification('Contact sales: sales@ke-rouma.com', 'info');
+}
+
+function filterRecipes(filter) {
+    showNotification(`Filtering recipes by: ${filter}`, 'info');
+    // Implement filtering logic here
+}
+
+function filterSaved(filter) {
+    showNotification(`Filtering saved recipes by: ${filter}`, 'info');
+    // Implement filtering logic here
+}
+
+function viewHighlightRecipe(index) {
+    if (window.highlightRecipes && window.highlightRecipes[index]) {
+        window.currentRecipes = [window.highlightRecipes[index]];
+        viewRecipe(0);
+    }
+}
+
+function saveHighlightRecipe(index) {
+    if (!AppState.currentUser) {
+        showNotification('Please login to save recipes', 'error');
+        return;
+    }
+
+    if (window.highlightRecipes && window.highlightRecipes[index]) {
+        const recipe = window.highlightRecipes[index];
+        const recipeId = recipe._id || recipe.id;
+        saveRecipe(index);
+    }
+}
+
 // Global function bindings for HTML onclick compatibility
 window.showLoginModal = function() { Auth.showLoginModal(); };
 window.showRegisterModal = function() { Auth.showRegisterModal(); };
@@ -1216,6 +1711,19 @@ window.checkPaymentStatus = checkPaymentStatus;
 window.toggleChat = toggleChat;
 window.sendChatMessage = sendChatMessage;
 window.quickAction = quickAction;
+window.saveHighlightRecipe = saveHighlightRecipe;
+window.handleChatKeyPress = handleChatKeyPress;
+window.filterIngredients = filterIngredients;
+window.startCookingMode = startCookingMode;
+window.setTimer = setTimer;
+window.voiceCommands = voiceCommands;
+window.nutritionInfo = nutritionInfo;
+window.mealPlanner = mealPlanner;
+window.shoppingList = shoppingList;
+window.contactSales = contactSales;
+window.filterRecipes = filterRecipes;
+window.filterSaved = filterSaved;
+window.viewHighlightRecipe = viewHighlightRecipe;
 
 // Highlight Recipes Management
 const HighlightRecipes = {
@@ -1256,16 +1764,19 @@ const HighlightRecipes = {
         const container = document.querySelector('#discover .recipe-grid');
         if (!container || !recipes.length) return;
 
-        container.innerHTML = recipes.slice(0, 6).map((recipe, index) => {
+        // Show all recipes, not just first 6
+        container.innerHTML = recipes.map((recipe, index) => {
             const cleanName = recipe.name?.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '') || 'Delicious Recipe';
             const rating = recipe.rating || (4.2 + Math.random() * 0.8);
-            
+            const isPremium = recipe.premium || false;
+
             return `
-                <div class="recipe-card" data-recipe-index="${index}">
+                <div class="recipe-card ${isPremium ? 'premium-recipe' : ''}" data-recipe-index="${index}">
                     <div class="recipe-card-content">
                         <div class="recipe-header">
                             <h3>${cleanName}</h3>
                             <span class="recipe-origin">${recipe.cuisine || 'African'}</span>
+                            ${isPremium ? '<span class="premium-badge"><i class="fas fa-crown"></i> Premium</span>' : ''}
                         </div>
                         <div class="recipe-meta">
                             <span><i class="fas fa-clock"></i> ${recipe.cooking_time || '30 mins'}</span>
@@ -1280,41 +1791,102 @@ const HighlightRecipes = {
                             <button class="btn-outline" onclick="startCookingMode(${index})">
                                 <i class="fas fa-play"></i> Start Cooking
                             </button>
+                            ${AppState.currentUser ? `<button class="btn-outline" onclick="saveHighlightRecipe(${index})"><i class="fas fa-bookmark"></i> Save</button>` : ''}
                         </div>
+                        ${isPremium && !AppState.currentUser?.is_premium ? `
+                            <div class="premium-overlay">
+                                <div class="premium-lock">
+                                    <i class="fas fa-lock"></i>
+                                    <p>Premium Recipe</p>
+                                    <button class="btn-primary btn-small" onclick="openPaymentModal()">Unlock</button>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
         }).join('');
-        
+
         // Store recipes globally
         window.highlightRecipes = recipes;
+
+        // Add load more functionality if there are many recipes
+        if (recipes.length > 6) {
+            this.addLoadMoreButton(container, recipes);
+        }
     },
 
-    showFallbackHighlights() {
-        const fallbackRecipes = [
-            {
-                name: "Ugali with Sukuma Wiki",
-                cuisine: "Kenyan",
-                cooking_time: "25 mins",
-                servings: 4,
-                rating: 4.8,
-                description: "A traditional Kenyan staple with nutritious greens",
-                ingredients: ["Maize flour", "Sukuma wiki", "Onions", "Tomatoes"],
-                instructions: ["Boil water", "Add maize flour gradually", "Prepare sukuma wiki"]
-            },
-            {
-                name: "Jollof Rice",
-                cuisine: "Nigerian",
-                cooking_time: "45 mins",
-                servings: 6,
-                rating: 4.9,
-                description: "Flavorful one-pot rice dish with spices and vegetables",
-                ingredients: ["Rice", "Tomatoes", "Onions", "Spices"],
-                instructions: ["Prepare tomato base", "Add rice", "Simmer until tender"]
+    addLoadMoreButton(container, allRecipes) {
+        const loadMoreBtn = document.createElement('div');
+        loadMoreBtn.className = 'load-more-container';
+        loadMoreBtn.innerHTML = `
+            <button class="btn-outline btn-large" onclick="HighlightRecipes.loadMoreRecipes()">
+                <i class="fas fa-plus"></i> Load More Recipes
+            </button>
+        `;
+        container.appendChild(loadMoreBtn);
+    },
+
+    loadMoreRecipes() {
+        // This would load additional recipes from the API
+        showNotification('Loading more recipes...', 'info');
+        // In a real implementation, this would fetch more recipes
+        setTimeout(() => {
+            showNotification('All recipes are already loaded!', 'info');
+        }, 1000);
+    },
+
+    async showFallbackHighlights() {
+        try {
+            // Generate dynamic fallback recipes using common African ingredients
+            const commonIngredients = ['rice', 'tomatoes', 'onions', 'beans', 'spinach', 'chicken'];
+            const response = await apiCall(API_ENDPOINTS.recipes.generate, {
+                method: 'POST',
+                body: {
+                    ingredients: commonIngredients,
+                    dietary_restrictions: [],
+                    user_id: AppState.currentUser?.id || null,
+                    mood: 'comfort',
+                    cuisine_type: 'African',
+                    serving_size: 4
+                }
+            });
+
+            if (response.recipes && response.recipes.length > 0) {
+                this.displayHighlights(response.recipes.slice(0, 6));
+            } else {
+                // Show message to encourage recipe generation
+                this.showFallbackMessage();
             }
-        ];
-        
-        this.displayHighlights(fallbackRecipes);
+        } catch (error) {
+            console.error('Failed to generate fallback highlights:', error);
+            this.showFallbackMessage();
+        }
+    },
+
+    showFallbackMessage() {
+        const container = document.querySelector('#discover .recipe-grid');
+        if (container) {
+            container.innerHTML = `
+                <div class="recipe-card">
+                    <div class="recipe-card-content">
+                        <div class="recipe-header">
+                            <h3>Discover Amazing Recipes</h3>
+                            <span class="recipe-origin">AI-Generated</span>
+                        </div>
+                        <p>Explore thousands of authentic African recipes generated by our AI. Start by selecting ingredients or browsing our curated collections!</p>
+                        <div class="recipe-actions">
+                            <button class="btn-primary" onclick="Navigation.showPage('generate')">
+                                <i class="fas fa-magic"></i> Generate Recipes
+                            </button>
+                            <button class="btn-outline" onclick="Navigation.showPage('home')">
+                                <i class="fas fa-home"></i> Get Started
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
     }
 };
 
@@ -1325,23 +1897,121 @@ const KitchenWidget = {
     timers: [],
 
     async startCooking(recipeData) {
+        // Check subscription limits for kitchen guidance
+        if (!this.checkSubscriptionLimits()) {
+            return;
+        }
+
         try {
             const response = await apiCall('/api/kitchen/start-cooking', {
                 method: 'POST',
                 body: {
-                    recipe_data: recipeData
+                    recipe_data: recipeData,
+                    user_id: AppState.currentUser?.id
                 }
             });
 
             if (response.success) {
                 this.currentSession = response.session;
                 this.showCookingInterface();
-                showNotification('Cooking mode activated! Follow the step-by-step guidance.', 'success');
+                showNotification('🎯 Cooking mode activated! Follow the step-by-step guidance.', 'success');
+
+                // Track usage for subscription limits
+                this.trackUsage();
             }
         } catch (error) {
             console.error('Failed to start cooking:', error);
-            showNotification('Failed to start cooking mode', 'error');
+            if (error.message.includes('subscription')) {
+                this.showUpgradePrompt();
+            } else {
+                showNotification('Failed to start cooking mode. Please try again.', 'error');
+            }
         }
+    },
+
+    checkSubscriptionLimits() {
+        if (!AppState.currentUser) {
+            showNotification('Please login to access cooking guidance', 'error');
+            Auth.showLoginModal();
+            return false;
+        }
+
+        // Check if user has premium subscription
+        if (!AppState.currentUser.is_premium) {
+            this.showUpgradePrompt();
+            return false;
+        }
+
+        // Check daily usage limits (example: 5 cooking sessions per day for premium)
+        const today = new Date().toDateString();
+        const usageKey = `kitchen_usage_${today}`;
+        const currentUsage = parseInt(localStorage.getItem(usageKey) || '0');
+
+        if (currentUsage >= 5) {
+            showNotification('Daily cooking guidance limit reached. Upgrade to Pro for unlimited access!', 'warning');
+            return false;
+        }
+
+        return true;
+    },
+
+    trackUsage() {
+        const today = new Date().toDateString();
+        const usageKey = `kitchen_usage_${today}`;
+        const currentUsage = parseInt(localStorage.getItem(usageKey) || '0');
+        localStorage.setItem(usageKey, (currentUsage + 1).toString());
+    },
+
+    showUpgradePrompt() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                <div class="upgrade-prompt">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <i class="fas fa-crown" style="font-size: 4rem; color: var(--accent-solid); margin-bottom: 1rem;"></i>
+                        <h2>Unlock Premium Cooking Guidance</h2>
+                        <p>Get step-by-step AI cooking assistance with voice commands and smart timers</p>
+                    </div>
+
+                    <div class="premium-features-list" style="margin: 2rem 0;">
+                        <div class="feature-item" style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0; padding: 1rem; background: rgba(44, 85, 48, 0.1); border-radius: 10px;">
+                            <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>Step-by-Step Guidance</strong>
+                                <p style="margin: 0; color: var(--text-light);">AI-powered cooking instructions with real-time tips</p>
+                            </div>
+                        </div>
+                        <div class="feature-item" style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0; padding: 1rem; background: rgba(44, 85, 48, 0.1); border-radius: 10px;">
+                            <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>Voice Commands</strong>
+                                <p style="margin: 0; color: var(--text-light);">Hands-free cooking with voice-activated assistance</p>
+                            </div>
+                        </div>
+                        <div class="feature-item" style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0; padding: 1rem; background: rgba(44, 85, 48, 0.1); border-radius: 10px;">
+                            <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>Smart Timers</strong>
+                                <p style="margin: 0; color: var(--text-light);">Automated cooking timers with notifications</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button class="btn-primary btn-large" onclick="openPaymentModal(); this.parentElement.parentElement.parentElement.remove();">
+                            <i class="fas fa-rocket"></i> Upgrade to Premium - KES 299/month
+                        </button>
+                        <p style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;">
+                            30-day money-back guarantee • Cancel anytime
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     },
 
     showCookingInterface() {
@@ -1354,45 +2024,98 @@ const KitchenWidget = {
                 <div class="cooking-header">
                     <h2><i class="fas fa-utensils"></i> Cooking: ${this.currentSession.recipe.name}</h2>
                     <div class="cooking-progress">
-                        <span>Step ${this.currentStep + 1} of ${this.currentSession.total_steps}</span>
+                        <span id="stepCounter">Step ${this.currentStep + 1} of ${this.currentSession.total_steps}</span>
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${(this.currentStep / this.currentSession.total_steps) * 100}%"></div>
+                            <div class="progress-fill" id="progressFill" style="width: ${(this.currentStep / this.currentSession.total_steps) * 100}%"></div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="cooking-content">
                     <div class="current-step" id="currentStep">
-                        <h3>Current Step</h3>
-                        <p id="stepInstruction">${this.currentSession.enhanced_steps[0]?.instruction || 'Getting ready...'}</p>
-                        <div class="step-meta">
-                            <span><i class="fas fa-clock"></i> ${this.currentSession.enhanced_steps[0]?.estimated_time || '5 mins'}</span>
-                            <span><i class="fas fa-thermometer-half"></i> ${this.currentSession.enhanced_steps[0]?.temperature || 'Medium heat'}</span>
+                        <h3><i class="fas fa-list-ol"></i> Current Step</h3>
+                        <div class="step-content">
+                            <p id="stepInstruction">${this.currentSession.enhanced_steps[0]?.instruction || 'Getting ready...'}</p>
+                            <div class="step-meta">
+                                <span><i class="fas fa-clock"></i> ${this.currentSession.enhanced_steps[0]?.estimated_time || '5 mins'}</span>
+                                <span><i class="fas fa-thermometer-half"></i> ${this.currentSession.enhanced_steps[0]?.temperature || 'Medium heat'}</span>
+                            </div>
                         </div>
                         <div class="cooking-tip">
                             <i class="fas fa-lightbulb"></i>
                             <span id="cookingTip">${this.currentSession.enhanced_steps[0]?.tips || 'Take your time and enjoy the process!'}</span>
                         </div>
                     </div>
-                    
+
                     <div class="cooking-controls">
+                        <button class="btn-outline" onclick="KitchenWidget.previousStep()" ${this.currentStep === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
                         <button class="btn-outline" onclick="KitchenWidget.setTimer()">
                             <i class="fas fa-stopwatch"></i> Set Timer
                         </button>
-                        <button class="btn-primary" onclick="KitchenWidget.nextStep()">
-                            <i class="fas fa-arrow-right"></i> Next Step
+                        <button class="btn-primary" onclick="KitchenWidget.nextStep()" id="nextStepBtn">
+                            <i class="fas fa-arrow-right"></i> ${this.currentStep >= this.currentSession.total_steps - 1 ? 'Complete' : 'Next Step'}
                         </button>
                         <button class="btn-outline" onclick="KitchenWidget.voiceCommand()">
                             <i class="fas fa-microphone"></i> Voice Help
                         </button>
                     </div>
-                    
-                    <div class="active-timers" id="activeTimers"></div>
+
+                    <div class="active-timers" id="activeTimers">
+                        <h4><i class="fas fa-clock"></i> Active Timers</h4>
+                    </div>
+
+                    <div class="cooking-navigation">
+                        <h4><i class="fas fa-route"></i> Quick Navigation</h4>
+                        <div class="step-dots" id="stepDots">
+                            ${this.generateStepDots()}
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', this.handleKeyboardNavigation.bind(this));
+    },
+
+    generateStepDots() {
+        let dots = '';
+        for (let i = 0; i < this.currentSession.total_steps; i++) {
+            const isActive = i === this.currentStep;
+            const isCompleted = i < this.currentStep;
+            dots += `<span class="step-dot ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="KitchenWidget.goToStep(${i})" data-step="${i}"></span>`;
+        }
+        return dots;
+    },
+
+    handleKeyboardNavigation(event) {
+        if (event.key === 'ArrowRight' || event.key === ' ') {
+            event.preventDefault();
+            this.nextStep();
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            this.previousStep();
+        } else if (event.key === 'Escape') {
+            this.closeCookingMode();
+        }
+    },
+
+    previousStep() {
+        if (this.currentStep > 0) {
+            this.currentStep--;
+            this.updateStepDisplay();
+        }
+    },
+
+    goToStep(stepIndex) {
+        if (stepIndex >= 0 && stepIndex < this.currentSession.total_steps) {
+            this.currentStep = stepIndex;
+            this.updateStepDisplay();
+        }
     },
 
     async nextStep() {
@@ -1425,22 +2148,57 @@ const KitchenWidget = {
     updateStepDisplay() {
         const stepInstruction = document.getElementById('stepInstruction');
         const cookingTip = document.getElementById('cookingTip');
-        const progressFill = document.querySelector('.progress-fill');
-        
+        const progressFill = document.getElementById('progressFill');
+        const stepCounter = document.getElementById('stepCounter');
+        const nextStepBtn = document.getElementById('nextStepBtn');
+        const stepDots = document.getElementById('stepDots');
+
         if (stepInstruction && this.currentSession.enhanced_steps[this.currentStep]) {
             const step = this.currentSession.enhanced_steps[this.currentStep];
             stepInstruction.textContent = step.instruction;
-            if (cookingTip) cookingTip.textContent = step.tips;
+            if (cookingTip) cookingTip.textContent = step.tips || 'Take your time and enjoy the process!';
         }
-        
+
         if (progressFill) {
             progressFill.style.width = `${(this.currentStep / this.currentSession.total_steps) * 100}%`;
         }
-        
-        // Update step counter
-        const stepCounter = document.querySelector('.cooking-progress span');
+
         if (stepCounter) {
             stepCounter.textContent = `Step ${this.currentStep + 1} of ${this.currentSession.total_steps}`;
+        }
+
+        if (nextStepBtn) {
+            const isLastStep = this.currentStep >= this.currentSession.total_steps - 1;
+            nextStepBtn.innerHTML = `<i class="fas fa-${isLastStep ? 'check' : 'arrow-right'}"></i> ${isLastStep ? 'Complete' : 'Next Step'}`;
+        }
+
+        if (stepDots) {
+            stepDots.innerHTML = this.generateStepDots();
+        }
+
+        // Update step content with better formatting
+        this.updateStepContent();
+    },
+
+    updateStepContent() {
+        const stepInstruction = document.getElementById('stepInstruction');
+        if (stepInstruction && this.currentSession.enhanced_steps[this.currentStep]) {
+            const step = this.currentSession.enhanced_steps[this.currentStep];
+
+            // Add step number and better formatting
+            const stepNumber = this.currentStep + 1;
+            const formattedInstruction = `${stepNumber}. ${step.instruction}`;
+
+            stepInstruction.innerHTML = `<strong>Step ${stepNumber}:</strong> ${step.instruction}`;
+
+            // Update meta information
+            const stepMeta = stepInstruction.parentElement.querySelector('.step-meta');
+            if (stepMeta && step.estimated_time) {
+                stepMeta.innerHTML = `
+                    <span><i class="fas fa-clock"></i> ${step.estimated_time}</span>
+                    ${step.temperature ? `<span><i class="fas fa-thermometer-half"></i> ${step.temperature}</span>` : ''}
+                `;
+            }
         }
     },
 
@@ -1577,36 +2335,23 @@ const KitchenWidget = {
     closeCookingMode() {
         const modal = document.querySelector('.cooking-modal');
         if (modal) modal.remove();
-        
+
+        // Remove keyboard event listener
+        document.removeEventListener('keydown', this.handleKeyboardNavigation.bind(this));
+
         this.currentSession = null;
         this.currentStep = 0;
         this.timers = [];
     }
 };
 
-// Global functions for HTML onclick compatibility
-window.viewHighlightRecipe = (index) => {
-    const recipe = window.highlightRecipes?.[index];
-    if (recipe) {
-        window.currentRecipes = [recipe];
-        viewRecipe(0);
-    }
-};
-
-window.startCookingMode = (index) => {
-    const recipe = window.highlightRecipes?.[index];
-    if (recipe) {
-        KitchenWidget.startCooking(recipe);
-    }
-};
-
-window.refreshHighlights = () => {
-    HighlightRecipes.generateHighlights();
-};
-
-// Load real recipes for home page
+// Load personalized recipes for home page
 async function loadHomePageRecipes() {
+    const container = document.getElementById('homeRecipesContainer');
+    if (!container) return;
+
     try {
+        // Try to load highlights first
         const response = await apiCall('/api/highlights');
         if (response.success && response.recipes && response.recipes.length > 0) {
             displayHomePageRecipes(response.recipes.slice(0, 3)); // Show first 3 recipes
@@ -1617,22 +2362,81 @@ async function loadHomePageRecipes() {
             });
             if (generateResponse.success && generateResponse.recipes) {
                 displayHomePageRecipes(generateResponse.recipes.slice(0, 3));
+            } else {
+                // Fallback: generate recipes based on common African ingredients
+                await generateFallbackHomeRecipes();
             }
         }
     } catch (error) {
         console.error('Failed to load home page recipes:', error);
-        // Keep static recipes as fallback
+        // Generate fallback recipes
+        await generateFallbackHomeRecipes();
+    }
+}
+
+// Generate fallback recipes for home page when API fails
+async function generateFallbackHomeRecipes() {
+    try {
+        // Generate recipes using common African ingredients
+        const commonIngredients = ['tomatoes', 'onions', 'rice', 'beans', 'spinach'];
+        const response = await apiCall(API_ENDPOINTS.recipes.generate, {
+            method: 'POST',
+            body: {
+                ingredients: commonIngredients,
+                dietary_restrictions: [],
+                user_id: AppState.currentUser?.id || null,
+                mood: 'comfort',
+                cuisine_type: 'African',
+                serving_size: 4
+            }
+        });
+
+        if (response.recipes && response.recipes.length > 0) {
+            displayHomePageRecipes(response.recipes.slice(0, 3));
+        } else {
+            // Show message to encourage recipe generation
+            showHomePageFallbackMessage();
+        }
+    } catch (error) {
+        console.error('Failed to generate fallback recipes:', error);
+        showHomePageFallbackMessage();
+    }
+}
+
+// Show fallback message when no recipes can be loaded
+function showHomePageFallbackMessage() {
+    const container = document.getElementById('homeRecipesContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="recipe-card">
+                <div class="recipe-card-content">
+                    <div class="recipe-header">
+                        <h3>Welcome to KE-ROUMA!</h3>
+                        <span class="recipe-origin">AI-Powered</span>
+                    </div>
+                    <p>Discover amazing African recipes personalized just for you. Start by selecting ingredients or letting our AI surprise you!</p>
+                    <div class="recipe-actions">
+                        <button class="btn-primary" onclick="Navigation.showPage('generate')">
+                            <i class="fas fa-magic"></i> Generate Recipes
+                        </button>
+                        <button class="btn-outline" onclick="Navigation.showPage('discover')">
+                            <i class="fas fa-compass"></i> Explore
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
 function displayHomePageRecipes(recipes) {
-    const container = document.querySelector('#home .recipe-grid');
+    const container = document.getElementById('homeRecipesContainer');
     if (!container || !recipes.length) return;
 
     container.innerHTML = recipes.map((recipe, index) => {
         const cleanName = recipe.name?.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '') || 'Delicious Recipe';
         const rating = recipe.rating || (4.2 + Math.random() * 0.8);
-        
+
         return `
             <div class="recipe-card">
                 <div class="recipe-card-content">
@@ -1646,14 +2450,19 @@ function displayHomePageRecipes(recipes) {
                         <span><i class="fas fa-star"></i> ${rating.toFixed(1)}</span>
                     </div>
                     <p>${recipe.description || 'A wonderful traditional dish with authentic flavors.'}</p>
-                    <button class="btn-primary" onclick="viewHomeRecipe(${index})">
-                        <i class="fas fa-eye"></i> View Recipe
-                    </button>
+                    <div class="recipe-actions">
+                        <button class="btn-primary" onclick="viewHomeRecipe(${index})">
+                            <i class="fas fa-eye"></i> View Recipe
+                        </button>
+                        <button class="btn-outline" onclick="startCookingFromHome(${index})">
+                            <i class="fas fa-play"></i> Start Cooking
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
-    
+
     // Store recipes globally for viewing
     window.homeRecipes = recipes;
 }
@@ -1667,43 +2476,106 @@ window.viewHomeRecipe = (index) => {
     }
 };
 
+// Start cooking from home page recipe
+window.startCookingFromHome = (index) => {
+    const recipe = window.homeRecipes?.[index];
+    if (recipe) {
+        // Store the recipe for cooking
+        window.currentRecipes = [recipe];
+        // Navigate to kitchen page
+        Navigation.showPage('kitchen');
+        // Start cooking mode after a short delay to ensure page is loaded
+        setTimeout(() => {
+            KitchenWidget.startCooking(recipe);
+        }, 500);
+    } else {
+        showNotification('Recipe not found', 'error');
+    }
+};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    AppState.init();
-    Navigation.init();
-    updateAuthUI();
-    
-    // Load real highlight recipes for home page
-    loadHomePageRecipes();
-    
-    // Load real highlight recipes for discover page
-    HighlightRecipes.loadHighlights();
-    
-    // Set up chat input handler
-    const chatInput = document.getElementById('chatInput');
-    if (chatInput) {
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendChatMessage();
-            }
-        });
+    console.log('Initializing KE-ROUMA app...');
+
+    try {
+        AppState.init();
+        console.log('AppState initialized');
+
+        Navigation.init();
+        console.log('Navigation initialized');
+
+        updateAuthUI();
+        console.log('Auth UI updated');
+
+        // Load real highlight recipes for home page
+        loadHomePageRecipes();
+
+        // Load real highlight recipes for discover page
+        if (typeof HighlightRecipes !== 'undefined') {
+            HighlightRecipes.loadHighlights();
+        }
+
+        // Set up chat input handler
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) {
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+        }
+
+        // Set up chat toggle
+        const chatToggle = document.querySelector('.chat-toggle');
+        if (chatToggle) {
+            chatToggle.addEventListener('click', toggleChat);
+        }
+
+        // Initialize floating background icons
+        createFloatingIcons();
+
+        // Request notification permission for timers
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        console.log('KE-ROUMA app initialized successfully!');
+
+    } catch (error) {
+        console.error('App initialization error:', error);
+        showNotification('App initialization failed. Please refresh the page.', 'error');
     }
-    
-    // Set up chat toggle
-    const chatToggle = document.querySelector('.chat-toggle');
-    if (chatToggle) {
-        chatToggle.addEventListener('click', toggleChat);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    try {
+        // Clean up navigation listeners
+        if (typeof Navigation !== 'undefined' && Navigation.cleanup) {
+            Navigation.cleanup();
+        }
+
+        // Clean up any active timers
+        if (typeof KitchenWidget !== 'undefined' && KitchenWidget.timers) {
+            KitchenWidget.timers.forEach(timer => {
+                // Clear any intervals associated with timers
+                if (timer.intervalId) {
+                    clearInterval(timer.intervalId);
+                }
+            });
+        }
+
+        console.log('App cleanup completed');
+    } catch (error) {
+        console.error('Cleanup error:', error);
     }
-    
-    // Initialize floating background icons
-    createFloatingIcons();
-    
-    // Request notification permission for timers
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-    
-    console.log('KE-ROUMA app initialized!');
+});
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', function(event) {
+    // Prevent default browser navigation behavior
+    // You could implement custom navigation here if needed
+    console.log('Browser navigation detected');
 });
 
 // Close modals when clicking outside
@@ -1711,7 +2583,7 @@ window.onclick = function(event) {
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
         if (event.target === modal) {
-            modal.style.display = 'none';
+            ModalManager.closeModal(modal);
         }
     });
 };

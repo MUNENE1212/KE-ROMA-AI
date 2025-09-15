@@ -262,95 +262,28 @@ Separate each recipe with "---"."""
     
     @staticmethod
     def _generate_mock_recipes(pantry_ingredients: List[str], health_goals: List[str], is_premium: bool) -> List[Dict[str, Any]]:
-        """Generate mock African recipes when OpenAI quota is exceeded"""
-        
-        ingredient_list = ", ".join(pantry_ingredients)
-        
-        mock_recipes = [
-            {
-                "name": f"Jollof Rice with {pantry_ingredients[0] if pantry_ingredients else 'Vegetables'}",
-                "origin": "West Africa",
-                "ingredients": [
-                    "2 cups jasmine rice",
-                    "1 can diced tomatoes",
-                    "1 large onion, diced",
-                    "3 cloves garlic, minced"
-                ] + [f"1 cup {ing}" for ing in pantry_ingredients[:3]],
-                "instructions": [
-                    "Heat oil in a large pot over medium heat",
-                    "Sauté onions until golden brown",
-                    "Add garlic and cook for 1 minute",
-                    "Add tomatoes and selected ingredients",
-                    "Add rice and stock, bring to boil",
-                    "Reduce heat, cover and simmer for 20-25 minutes",
-                    "Let stand 5 minutes before serving"
-                ],
-                "cooking_time": "45 minutes",
-                "health_benefits": "Rich in complex carbohydrates, provides sustained energy, contains antioxidants from tomatoes",
-                "cultural_context": "Jollof rice is a beloved West African dish, often served at celebrations and family gatherings",
-                "nutrition_info": {
-                    "calories": 420,
-                    "protein": "12g",
-                    "fiber": "8g",
-                    "vitamin_c": "25mg"
-                } if is_premium else None
-            },
-            {
-                "name": f"Ethiopian Spiced Lentils with {pantry_ingredients[1] if len(pantry_ingredients) > 1 else 'Herbs'}",
-                "origin": "Ethiopia",
-                "ingredients": [
-                    "1 cup red lentils",
-                    "2 tbsp berbere spice blend",
-                    "1 large onion, chopped",
-                    "3 cloves garlic, minced"
-                ] + [f"1/2 cup {ing}" for ing in pantry_ingredients[:2]],
-                "instructions": [
-                    "Rinse lentils and set aside",
-                    "Sauté onions until soft and golden",
-                    "Add garlic and berbere spice, cook 1 minute",
-                    "Add selected ingredients and lentils",
-                    "Add 3 cups water, bring to boil",
-                    "Simmer 20-25 minutes until lentils are tender",
-                    "Season with salt and serve hot"
-                ],
-                "cooking_time": "35 minutes",
-                "health_benefits": "High in plant protein and fiber, supports digestive health, rich in iron and folate",
-                "cultural_context": "Misir wot is a staple Ethiopian dish, traditionally served with injera bread",
-                "nutrition_info": {
-                    "calories": 280,
-                    "protein": "18g",
-                    "fiber": "12g",
-                    "iron": "6mg"
-                } if is_premium else None
-            },
-            {
-                "name": f"Kenyan Sukuma Wiki with {pantry_ingredients[0] if pantry_ingredients else 'Onions'}",
-                "origin": "Kenya",
-                "ingredients": [
-                    "1 bunch collard greens (sukuma wiki)",
-                    "2 medium tomatoes, chopped",
-                    "1 large onion, sliced",
-                    "2 cloves garlic, minced"
-                ] + [f"1/2 cup {ing}" for ing in pantry_ingredients[:2]],
-                "instructions": [
-                    "Wash and chop collard greens into strips",
-                    "Heat oil in a large pan",
-                    "Sauté onions until translucent",
-                    "Add garlic and selected ingredients",
-                    "Add tomatoes, cook until soft",
-                    "Add collard greens, stir well",
-                    "Cover and cook 10-15 minutes until tender"
-                ],
-                "cooking_time": "25 minutes",
-                "health_benefits": "Excellent source of vitamins A, C, and K, supports immune system and bone health",
-                "cultural_context": "Sukuma wiki means 'push the week' in Swahili, a nutritious and affordable daily meal",
-                "nutrition_info": {
-                    "calories": 150,
-                    "protein": "8g",
-                    "fiber": "6g",
-                    "vitamin_a": "200% DV"
-                } if is_premium else None
-            }
-        ]
-        
-        return mock_recipes
+        """Generate mock African recipes when all AI providers fail - using dynamic generation"""
+        try:
+            # Try to generate recipes dynamically using the multi-AI service
+            from services.multi_ai_service import MultiAIService
+            recipes, _ = asyncio.run(MultiAIService.generate_recipes(
+                pantry_ingredients=pantry_ingredients,
+                health_goals=health_goals,
+                is_premium=is_premium
+            ))
+            return recipes
+        except Exception as e:
+            print(f"Dynamic mock recipe generation failed: {e}")
+            # Fallback to very basic generic recipes
+            return [
+                {
+                    "name": f"Simple {pantry_ingredients[0] if pantry_ingredients else 'Ingredient'} Dish",
+                    "origin": "African",
+                    "ingredients": pantry_ingredients[:5] if pantry_ingredients else ["Basic ingredients"],
+                    "instructions": ["Prepare ingredients", "Cook according to traditional methods", "Serve hot"],
+                    "cooking_time": "30 minutes",
+                    "health_benefits": "Provides essential nutrients",
+                    "cultural_context": "Traditional African cooking",
+                    "nutrition_info": None
+                }
+            ]

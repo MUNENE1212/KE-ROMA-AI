@@ -80,23 +80,11 @@ async def refresh_highlights():
     from routes.highlights import HighlightsService
     return await HighlightsService.refresh_highlights()
 
-@kitchen_router.post("/api/kitchen/start-cooking")
-async def start_cooking():
-    from routes.kitchen import start_cooking
-    return start_cooking()
-
-@kitchen_router.post("/api/kitchen/next-step")
-async def next_step():
-    from routes.kitchen import next_step
-    return next_step()
-
-@kitchen_router.post("/api/kitchen/set-timer")
-async def set_timer():
-    from routes.kitchen import set_timer
-    return set_timer()
+# Import kitchen router
+from routes.kitchen import router as kitchen_router
 
 app.include_router(highlights_router, tags=["highlights"])
-app.include_router(kitchen_router, tags=["kitchen"])
+app.include_router(kitchen_router, prefix="/api/kitchen", tags=["kitchen"])
 
 @app.get("/health")
 async def health_check():
@@ -105,4 +93,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
