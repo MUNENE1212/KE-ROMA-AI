@@ -19,6 +19,23 @@ async def init_db():
     db.client = AsyncIOMotorClient(settings.mongodb_url)
     db.database = db.client[settings.database_name]
     
+    # Create saved_recipes collection
+    await db.database.saved_recipes.create_index("user_id")
+    await db.database.saved_recipes.create_index("saved_at")
+    
+    # Create highlight_recipes collection
+    await db.database.highlight_recipes.create_index("name")
+    await db.database.highlight_recipes.create_index("cuisine")
+    await db.database.highlight_recipes.create_index("mood")
+    await db.database.highlight_recipes.create_index("rating")
+    await db.database.highlight_recipes.create_index("created_at")
+    
+    # Create cooking_sessions collection
+    await db.database.cooking_sessions.create_index("session_id", unique=True)
+    await db.database.cooking_sessions.create_index("user_id")
+    await db.database.cooking_sessions.create_index("started_at")
+    await db.database.cooking_sessions.create_index("completed_at")
+    
     # Create indexes for better performance
     await create_indexes()
     

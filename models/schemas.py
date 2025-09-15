@@ -146,6 +146,7 @@ class RecipeGenerationRequest(BaseModel):
     dietary_restrictions: Optional[List[str]] = []
     cuisine_type: Optional[str] = "African"
     serving_size: Optional[int] = 4
+    user_id: Optional[str] = None
     
     @validator('ingredients')
     def validate_ingredients(cls, v):

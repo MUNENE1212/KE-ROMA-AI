@@ -1,6 +1,9 @@
 // KE-ROUMA Core Application - Streamlined Version
 // ================================================
 
+// Global Variables
+let chatOpen = false;
+
 // Application State
 const AppState = {
     currentPage: 'home',
@@ -140,6 +143,11 @@ const RecipeGenerator = {
         this.setupMoodSelector();
         this.setupIngredientSelection();
         this.updateIngredientDisplay();
+        
+        // Initialize ingredients display on page load
+        setTimeout(() => {
+            this.showIngredientCategory('vegetables');
+        }, 100);
     },
     
     setupMoodSelector() {
@@ -191,7 +199,7 @@ const RecipeGenerator = {
         if (container && this.ingredientDatabase[category]) {
             container.innerHTML = this.ingredientDatabase[category].map(ingredient => {
                 const isSelected = AppState.selectedIngredients.includes(ingredient);
-                return `<div class="ingredient-chip ${isSelected ? 'selected' : ''}" onclick="RecipeGenerator.toggleIngredient('${ingredient}')">${ingredient}</div>`;
+                return `<div class="ingredient-option ${isSelected ? 'selected' : ''}" onclick="RecipeGenerator.toggleIngredient('${ingredient}')">${ingredient}</div>`;
             }).join('');
         }
     },
@@ -228,7 +236,7 @@ const RecipeGenerator = {
             return;
         }
 
-        const generateBtn = document.querySelector('.btn-primary[onclick="generateRecipes()"]');
+        const generateBtn = document.querySelector('button[onclick="generateRecipes()"]');
         if (generateBtn) {
             generateBtn.classList.add('loading');
             generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
@@ -236,10 +244,12 @@ const RecipeGenerator = {
 
         try {
             const requestData = {
-                pantry_ingredients: AppState.selectedIngredients,
-                health_goals: AppState.selectedMood ? [AppState.selectedMood] : [],
+                ingredients: AppState.selectedIngredients,
+                dietary_restrictions: AppState.selectedMood ? [AppState.selectedMood] : [],
                 user_id: AppState.currentUser?.id || null,
-                preferred_provider: 'gemini'
+                mood: AppState.selectedMood,
+                cuisine_type: 'African',
+                serving_size: 4
             };
 
             const response = await apiCall(API_ENDPOINTS.recipes.generate, {
@@ -266,7 +276,16 @@ const RecipeGenerator = {
 
         } catch (error) {
             console.error('Recipe generation failed:', error);
-            showNotification('Failed to generate recipes. Please try again.', 'error');
+            console.error('Error details:', error.message);
+            console.error('Selected ingredients:', AppState.selectedIngredients);
+            console.error('Request data that was sent:', requestData);
+            
+            // Check if ingredients array is empty
+            if (!AppState.selectedIngredients || AppState.selectedIngredients.length === 0) {
+                showNotification('Please select ingredients first before generating recipes', 'warning');
+            } else {
+                showNotification(`Failed to generate recipes: ${error.message}. Please try again.`, 'error');
+            }
         } finally {
             if (generateBtn) {
                 generateBtn.classList.remove('loading');
@@ -279,7 +298,7 @@ const RecipeGenerator = {
         const container = document.querySelector('#generate .module-card');
         if (!container) return;
         
-        let resultsHtml = '<div class="recipe-results"><h3>🎉 Your AI-Generated Recipes</h3>';
+        let resultsHtml = '<div class="recipe-results"><h3><i class="fas fa-magic"></i> Your AI-Generated Recipes</h3>';
         
         if (isGuest && recipes.length === 1) {
             resultsHtml += '<div class="guest-notice"><p><i class="fas fa-info-circle"></i> Guest preview - Login to generate unlimited recipes!</p></div>';
@@ -304,6 +323,7 @@ const RecipeGenerator = {
                             <button class="btn-primary" onclick="viewRecipe(${index})">
                                 <i class="fas fa-eye"></i> View Recipe
                             </button>
+                            ${AppState.currentUser ? `<button class="btn-outline" onclick="saveRecipe(${index})"><i class="fas fa-bookmark"></i> Save</button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -359,7 +379,9 @@ const Auth = {
                             <label for="loginPassword">Password:</label>
                             <input type="password" id="loginPassword" required>
                         </div>
-                        <button type="submit" class="btn-primary">Login</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
                     </form>
                     <p>Don't have an account? <a href="#" onclick="this.parentElement.parentElement.parentElement.remove(); Auth.showRegisterModal();">Register here</a></p>
                 </div>
@@ -367,7 +389,7 @@ const Auth = {
         `;
         document.body.appendChild(modal);
         
-        modal.querySelector('#loginForm').addEventListener('submit', this.handleLogin);
+        modal.querySelector('#loginForm').addEventListener('submit', Auth.handleLogin.bind(Auth));
     },
 
     showRegisterModal() {
@@ -392,7 +414,9 @@ const Auth = {
                             <label for="registerPassword">Password:</label>
                             <input type="password" id="registerPassword" required>
                         </div>
-                        <button type="submit" class="btn-primary">Register</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-user-plus"></i> Register
+                        </button>
                     </form>
                     <p>Already have an account? <a href="#" onclick="this.parentElement.parentElement.parentElement.remove(); Auth.showLoginModal();">Login here</a></p>
                 </div>
@@ -400,7 +424,7 @@ const Auth = {
         `;
         document.body.appendChild(modal);
         
-        modal.querySelector('#registerForm').addEventListener('submit', this.handleRegister);
+        modal.querySelector('#registerForm').addEventListener('submit', Auth.handleRegister.bind(Auth));
     },
 
     async handleLogin(event) {
@@ -457,11 +481,46 @@ const Auth = {
     }
 };
 
+// Floating Icons Animation
+function createFloatingIcons() {
+    const floatingContainer = document.querySelector('.floating-icons');
+    if (!floatingContainer) return;
+    
+    const icons = ['🍽️', '🥘', '🍲', '🥗', '🍛', '🥙', '🌶️', '🧄', '🧅', '🥕'];
+    
+    for (let i = 0; i < 15; i++) {
+        const icon = document.createElement('div');
+        icon.className = 'floating-icon';
+        icon.textContent = icons[Math.floor(Math.random() * icons.length)];
+        
+        // Random positioning
+        icon.style.left = Math.random() * 100 + '%';
+        icon.style.top = Math.random() * 100 + '%';
+        icon.style.animationDelay = Math.random() * 20 + 's';
+        icon.style.animationDuration = (15 + Math.random() * 10) + 's';
+        
+        floatingContainer.appendChild(icon);
+    }
+}
+
 // Chat Functions
-function toggleChat() {
-    const chatWidget = document.querySelector('.chat-widget');
-    if (chatWidget) {
-        chatWidget.style.display = chatWidget.style.display === 'none' ? 'flex' : 'none';
+// function toggleChat() {
+  //  const chatWindow = document.querySelector('.chat-window');
+  //  if (chatWindow) {
+   //     const isVisible = chatWindow.style.display === 'flex';
+  //      chatWindow.style.display = isVisible ? 'none' : 'flex';
+ //   }
+// }
+ // Enhanced chat functionality
+ function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    chatOpen = !chatOpen;
+    
+    if (chatOpen) {
+        chatWindow.style.display = 'flex';
+        document.getElementById('chatInput').focus();
+    } else {
+        chatWindow.style.display = 'none';
     }
 }
 
@@ -518,10 +577,21 @@ async function sendChatMessage() {
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    
+    const icons = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    };
+    
     notification.innerHTML = `
         <div class="notification-content">
+            <i class="${icons[type] || icons.info}"></i>
             <span class="notification-message">${message}</span>
-            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     `;
     
@@ -559,13 +629,21 @@ function updateAuthUI() {
     if (authButtons) {
         if (AppState.currentUser) {
             authButtons.innerHTML = `
-                <span style="color: white; margin-right: 1rem;">Welcome, ${AppState.currentUser.username}!</span>
-                <button class="btn-outline" onclick="Auth.logout()">Logout</button>
+                <span style="color: white; margin-right: 1rem;">
+                    <i class="fas fa-user"></i> Welcome, ${AppState.currentUser.username}!
+                </span>
+                <button class="btn-outline" onclick="Auth.logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             `;
         } else {
             authButtons.innerHTML = `
-                <button class="btn-outline" onclick="Auth.showLoginModal()">Login</button>
-                <button class="btn-primary" onclick="Auth.showRegisterModal()">Register</button>
+                <button class="btn-outline" onclick="Auth.showLoginModal()">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button class="btn-primary" onclick="Auth.showRegisterModal()">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
             `;
         }
     }
@@ -1118,11 +1196,12 @@ function quickAction(type) {
 }
 
 // Global function bindings for HTML onclick compatibility
-window.showLoginModal = () => Auth.showLoginModal();
-window.showRegisterModal = () => Auth.showRegisterModal();
+window.showLoginModal = function() { Auth.showLoginModal(); };
+window.showRegisterModal = function() { Auth.showRegisterModal(); };
 window.generateRecipes = () => RecipeGenerator.generateRecipes();
 window.setMood = (mood) => RecipeGenerator.setMood(mood);
 window.showIngredientCategory = (category) => RecipeGenerator.showIngredientCategory(category);
+window.toggleIngredient = (ingredient) => RecipeGenerator.toggleIngredient(ingredient);
 window.viewRecipe = viewRecipe;
 window.closeRecipeModal = closeRecipeModal;
 window.saveRecipe = saveRecipe;
@@ -1138,11 +1217,467 @@ window.toggleChat = toggleChat;
 window.sendChatMessage = sendChatMessage;
 window.quickAction = quickAction;
 
+// Highlight Recipes Management
+const HighlightRecipes = {
+    async loadHighlights() {
+        try {
+            const response = await apiCall('/api/highlights');
+            if (response.success && response.recipes) {
+                this.displayHighlights(response.recipes);
+            } else {
+                // Generate new highlights if none exist
+                await this.generateHighlights();
+            }
+        } catch (error) {
+            console.error('Failed to load highlights:', error);
+            // Show fallback highlights
+            this.showFallbackHighlights();
+        }
+    },
+
+    async generateHighlights() {
+        try {
+            showNotification('Generating fresh highlight recipes...', 'info');
+            const response = await apiCall('/api/highlights/generate', {
+                method: 'POST'
+            });
+            
+            if (response.success) {
+                this.displayHighlights(response.recipes);
+                showNotification('New highlight recipes generated!', 'success');
+            }
+        } catch (error) {
+            console.error('Failed to generate highlights:', error);
+            showNotification('Failed to generate highlights', 'error');
+        }
+    },
+
+    displayHighlights(recipes) {
+        const container = document.querySelector('#discover .recipe-grid');
+        if (!container || !recipes.length) return;
+
+        container.innerHTML = recipes.slice(0, 6).map((recipe, index) => {
+            const cleanName = recipe.name?.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '') || 'Delicious Recipe';
+            const rating = recipe.rating || (4.2 + Math.random() * 0.8);
+            
+            return `
+                <div class="recipe-card" data-recipe-index="${index}">
+                    <div class="recipe-card-content">
+                        <div class="recipe-header">
+                            <h3>${cleanName}</h3>
+                            <span class="recipe-origin">${recipe.cuisine || 'African'}</span>
+                        </div>
+                        <div class="recipe-meta">
+                            <span><i class="fas fa-clock"></i> ${recipe.cooking_time || '30 mins'}</span>
+                            <span><i class="fas fa-users"></i> ${recipe.servings || 4} servings</span>
+                            <span><i class="fas fa-star"></i> ${rating.toFixed(1)}</span>
+                        </div>
+                        <p>${recipe.description || 'A wonderful traditional dish with authentic flavors.'}</p>
+                        <div class="recipe-actions">
+                            <button class="btn-primary" onclick="viewHighlightRecipe(${index})">
+                                <i class="fas fa-eye"></i> View Recipe
+                            </button>
+                            <button class="btn-outline" onclick="startCookingMode(${index})">
+                                <i class="fas fa-play"></i> Start Cooking
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Store recipes globally
+        window.highlightRecipes = recipes;
+    },
+
+    showFallbackHighlights() {
+        const fallbackRecipes = [
+            {
+                name: "Ugali with Sukuma Wiki",
+                cuisine: "Kenyan",
+                cooking_time: "25 mins",
+                servings: 4,
+                rating: 4.8,
+                description: "A traditional Kenyan staple with nutritious greens",
+                ingredients: ["Maize flour", "Sukuma wiki", "Onions", "Tomatoes"],
+                instructions: ["Boil water", "Add maize flour gradually", "Prepare sukuma wiki"]
+            },
+            {
+                name: "Jollof Rice",
+                cuisine: "Nigerian",
+                cooking_time: "45 mins",
+                servings: 6,
+                rating: 4.9,
+                description: "Flavorful one-pot rice dish with spices and vegetables",
+                ingredients: ["Rice", "Tomatoes", "Onions", "Spices"],
+                instructions: ["Prepare tomato base", "Add rice", "Simmer until tender"]
+            }
+        ];
+        
+        this.displayHighlights(fallbackRecipes);
+    }
+};
+
+// Kitchen Widget for Realtime Guidance
+const KitchenWidget = {
+    currentSession: null,
+    currentStep: 0,
+    timers: [],
+
+    async startCooking(recipeData) {
+        try {
+            const response = await apiCall('/api/kitchen/start-cooking', {
+                method: 'POST',
+                body: {
+                    recipe_data: recipeData
+                }
+            });
+
+            if (response.success) {
+                this.currentSession = response.session;
+                this.showCookingInterface();
+                showNotification('Cooking mode activated! Follow the step-by-step guidance.', 'success');
+            }
+        } catch (error) {
+            console.error('Failed to start cooking:', error);
+            showNotification('Failed to start cooking mode', 'error');
+        }
+    },
+
+    showCookingInterface() {
+        const modal = document.createElement('div');
+        modal.className = 'modal cooking-modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content cooking-interface">
+                <span class="close" onclick="KitchenWidget.closeCookingMode()">&times;</span>
+                <div class="cooking-header">
+                    <h2><i class="fas fa-utensils"></i> Cooking: ${this.currentSession.recipe.name}</h2>
+                    <div class="cooking-progress">
+                        <span>Step ${this.currentStep + 1} of ${this.currentSession.total_steps}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${(this.currentStep / this.currentSession.total_steps) * 100}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="cooking-content">
+                    <div class="current-step" id="currentStep">
+                        <h3>Current Step</h3>
+                        <p id="stepInstruction">${this.currentSession.enhanced_steps[0]?.instruction || 'Getting ready...'}</p>
+                        <div class="step-meta">
+                            <span><i class="fas fa-clock"></i> ${this.currentSession.enhanced_steps[0]?.estimated_time || '5 mins'}</span>
+                            <span><i class="fas fa-thermometer-half"></i> ${this.currentSession.enhanced_steps[0]?.temperature || 'Medium heat'}</span>
+                        </div>
+                        <div class="cooking-tip">
+                            <i class="fas fa-lightbulb"></i>
+                            <span id="cookingTip">${this.currentSession.enhanced_steps[0]?.tips || 'Take your time and enjoy the process!'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="cooking-controls">
+                        <button class="btn-outline" onclick="KitchenWidget.setTimer()">
+                            <i class="fas fa-stopwatch"></i> Set Timer
+                        </button>
+                        <button class="btn-primary" onclick="KitchenWidget.nextStep()">
+                            <i class="fas fa-arrow-right"></i> Next Step
+                        </button>
+                        <button class="btn-outline" onclick="KitchenWidget.voiceCommand()">
+                            <i class="fas fa-microphone"></i> Voice Help
+                        </button>
+                    </div>
+                    
+                    <div class="active-timers" id="activeTimers"></div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    },
+
+    async nextStep() {
+        if (this.currentStep >= this.currentSession.total_steps - 1) {
+            this.completeCooking();
+            return;
+        }
+
+        this.currentStep++;
+        
+        try {
+            const response = await apiCall('/api/kitchen/next-step', {
+                method: 'POST',
+                body: {
+                    session_id: this.currentSession.session_id,
+                    current_step: this.currentStep
+                }
+            });
+
+            if (response.success) {
+                this.updateStepDisplay();
+                showNotification(response.next_step.tip, 'info');
+            }
+        } catch (error) {
+            console.error('Failed to get next step:', error);
+            this.updateStepDisplay(); // Continue with local data
+        }
+    },
+
+    updateStepDisplay() {
+        const stepInstruction = document.getElementById('stepInstruction');
+        const cookingTip = document.getElementById('cookingTip');
+        const progressFill = document.querySelector('.progress-fill');
+        
+        if (stepInstruction && this.currentSession.enhanced_steps[this.currentStep]) {
+            const step = this.currentSession.enhanced_steps[this.currentStep];
+            stepInstruction.textContent = step.instruction;
+            if (cookingTip) cookingTip.textContent = step.tips;
+        }
+        
+        if (progressFill) {
+            progressFill.style.width = `${(this.currentStep / this.currentSession.total_steps) * 100}%`;
+        }
+        
+        // Update step counter
+        const stepCounter = document.querySelector('.cooking-progress span');
+        if (stepCounter) {
+            stepCounter.textContent = `Step ${this.currentStep + 1} of ${this.currentSession.total_steps}`;
+        }
+    },
+
+    async setTimer() {
+        const duration = prompt('Set timer for how many minutes?', '5');
+        if (!duration || isNaN(duration)) return;
+
+        try {
+            const response = await apiCall('/api/kitchen/set-timer', {
+                method: 'POST',
+                body: {
+                    duration: parseInt(duration),
+                    label: `Step ${this.currentStep + 1} Timer`
+                }
+            });
+
+            if (response.success) {
+                this.addTimer(response.timer);
+                showNotification(`Timer set for ${duration} minutes`, 'success');
+            }
+        } catch (error) {
+            console.error('Failed to set timer:', error);
+            // Fallback local timer
+            this.addLocalTimer(parseInt(duration));
+        }
+    },
+
+    addTimer(timer) {
+        this.timers.push(timer);
+        this.updateTimersDisplay();
+        
+        // Start countdown
+        const timerInterval = setInterval(() => {
+            const timeLeft = new Date(timer.ends_at) - new Date();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                this.timerComplete(timer);
+            }
+        }, 1000);
+    },
+
+    addLocalTimer(minutes) {
+        const timer = {
+            id: `local_${Date.now()}`,
+            label: `Step ${this.currentStep + 1} Timer`,
+            duration: minutes,
+            started_at: new Date().toISOString(),
+            ends_at: new Date(Date.now() + minutes * 60000).toISOString()
+        };
+        
+        this.addTimer(timer);
+        showNotification(`Timer set for ${minutes} minutes`, 'success');
+    },
+
+    updateTimersDisplay() {
+        const container = document.getElementById('activeTimers');
+        if (!container) return;
+        
+        container.innerHTML = this.timers.map(timer => `
+            <div class="timer-item" data-timer-id="${timer.id}">
+                <span class="timer-label">${timer.label}</span>
+                <span class="timer-countdown" id="countdown-${timer.id}">--:--</span>
+            </div>
+        `).join('');
+    },
+
+    timerComplete(timer) {
+        showNotification(`⏰ Timer complete: ${timer.label}`, 'warning');
+        
+        // Play notification sound (if available)
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('KE-ROUMA Timer', {
+                body: `${timer.label} is complete!`,
+                icon: '/static/favicon.ico'
+            });
+        }
+        
+        // Remove from active timers
+        this.timers = this.timers.filter(t => t.id !== timer.id);
+        this.updateTimersDisplay();
+    },
+
+    async voiceCommand() {
+        if (!('webkitSpeechRecognition' in window)) {
+            showNotification('Voice commands not supported in this browser', 'error');
+            return;
+        }
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            showNotification('Listening... Say your command', 'info');
+        };
+
+        recognition.onresult = async (event) => {
+            const command = event.results[0][0].transcript.toLowerCase();
+            
+            try {
+                const response = await apiCall('/api/kitchen/voice-command', {
+                    method: 'POST',
+                    body: { command }
+                });
+                
+                if (response.success) {
+                    showNotification(response.response, 'info');
+                    
+                    // Handle specific commands
+                    if (command.includes('next step')) {
+                        this.nextStep();
+                    } else if (command.includes('set timer')) {
+                        this.setTimer();
+                    }
+                }
+            } catch (error) {
+                showNotification('Voice command failed', 'error');
+            }
+        };
+
+        recognition.onerror = () => {
+            showNotification('Voice recognition error', 'error');
+        };
+
+        recognition.start();
+    },
+
+    completeCooking() {
+        showNotification('🎉 Cooking complete! Enjoy your meal!', 'success');
+        this.closeCookingMode();
+    },
+
+    closeCookingMode() {
+        const modal = document.querySelector('.cooking-modal');
+        if (modal) modal.remove();
+        
+        this.currentSession = null;
+        this.currentStep = 0;
+        this.timers = [];
+    }
+};
+
+// Global functions for HTML onclick compatibility
+window.viewHighlightRecipe = (index) => {
+    const recipe = window.highlightRecipes?.[index];
+    if (recipe) {
+        window.currentRecipes = [recipe];
+        viewRecipe(0);
+    }
+};
+
+window.startCookingMode = (index) => {
+    const recipe = window.highlightRecipes?.[index];
+    if (recipe) {
+        KitchenWidget.startCooking(recipe);
+    }
+};
+
+window.refreshHighlights = () => {
+    HighlightRecipes.generateHighlights();
+};
+
+// Load real recipes for home page
+async function loadHomePageRecipes() {
+    try {
+        const response = await apiCall('/api/highlights');
+        if (response.success && response.recipes && response.recipes.length > 0) {
+            displayHomePageRecipes(response.recipes.slice(0, 3)); // Show first 3 recipes
+        } else {
+            // Generate new highlights if none exist
+            const generateResponse = await apiCall('/api/highlights/generate', {
+                method: 'POST'
+            });
+            if (generateResponse.success && generateResponse.recipes) {
+                displayHomePageRecipes(generateResponse.recipes.slice(0, 3));
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load home page recipes:', error);
+        // Keep static recipes as fallback
+    }
+}
+
+function displayHomePageRecipes(recipes) {
+    const container = document.querySelector('#home .recipe-grid');
+    if (!container || !recipes.length) return;
+
+    container.innerHTML = recipes.map((recipe, index) => {
+        const cleanName = recipe.name?.replace(/^\*\*\s*/, '').replace(/\s*\*\*$/, '') || 'Delicious Recipe';
+        const rating = recipe.rating || (4.2 + Math.random() * 0.8);
+        
+        return `
+            <div class="recipe-card">
+                <div class="recipe-card-content">
+                    <div class="recipe-header">
+                        <h3>${cleanName}</h3>
+                        <span class="recipe-origin">${recipe.cuisine || 'African'}</span>
+                    </div>
+                    <div class="recipe-meta">
+                        <span><i class="fas fa-clock"></i> ${recipe.cooking_time || '30 mins'}</span>
+                        <span><i class="fas fa-users"></i> ${recipe.servings || 4} servings</span>
+                        <span><i class="fas fa-star"></i> ${rating.toFixed(1)}</span>
+                    </div>
+                    <p>${recipe.description || 'A wonderful traditional dish with authentic flavors.'}</p>
+                    <button class="btn-primary" onclick="viewHomeRecipe(${index})">
+                        <i class="fas fa-eye"></i> View Recipe
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Store recipes globally for viewing
+    window.homeRecipes = recipes;
+}
+
+// View recipe from home page
+window.viewHomeRecipe = (index) => {
+    const recipe = window.homeRecipes?.[index];
+    if (recipe) {
+        window.currentRecipes = [recipe];
+        viewRecipe(0);
+    }
+};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     AppState.init();
     Navigation.init();
     updateAuthUI();
+    
+    // Load real highlight recipes for home page
+    loadHomePageRecipes();
+    
+    // Load real highlight recipes for discover page
+    HighlightRecipes.loadHighlights();
     
     // Set up chat input handler
     const chatInput = document.getElementById('chatInput');
@@ -1154,5 +1689,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Set up chat toggle
+    const chatToggle = document.querySelector('.chat-toggle');
+    if (chatToggle) {
+        chatToggle.addEventListener('click', toggleChat);
+    }
+    
+    // Initialize floating background icons
+    createFloatingIcons();
+    
+    // Request notification permission for timers
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
     console.log('KE-ROUMA app initialized!');
 });
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+};

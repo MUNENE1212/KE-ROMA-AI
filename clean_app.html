@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KE-ROUMA - African Heritage Recipes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c5530;
+            --primary-light: #4a7c59;
+            --accent-color: #f39c12;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --text-color: #333;
+            --text-light: #666;
+            --background: #f8f9fa;
+            --white: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Ingredient Selection */
+        .ingredient-input {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ingredient-input input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .ingredient-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        /* Ingredient Tags */
+        .ingredient-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            min-height: 40px;
+            padding: 0.5rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+        }
+
+        .ingredient-tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .remove-tag {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .remove-tag:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        /* Recipe Results */
+        .recipe-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .recipe-card {
+            background: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .recipe-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 1.5rem;
+        }
+
+        .recipe-header h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .recipe-content {
+            padding: 1.5rem;
+        }
+
+        .recipe-ingredients {
+            margin-bottom: 1rem;
+        }
+
+        .recipe-ingredients h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .ingredient-list {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .ingredient-item {
+            background: var(--background);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--error-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .notification.info {
+            background: var(--primary-color);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .recipe-results {
+                grid-template-columns: 1fr;
+            }
+
+            .ingredient-input {
+                flex-direction: column;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1>🍽️ KE-ROUMA</h1>
+            <p>Discover authentic African recipes with AI-powered recommendations</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Ingredient Selection Section -->
+            <section class="section">
+                <h2><i class="fas fa-leaf"></i> Select Your Ingredients</h2>
+                
+                <div class="ingredient-input">
+                    <input 
+                        type="text" 
+                        id="ingredientInput" 
+                        placeholder="Type an ingredient (e.g., tomatoes, rice, chicken)..."
+                        onkeypress="handleIngredientKeypress(event)"
+                    >
+                    <button class="btn btn-primary" onclick="addIngredient()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+
+                <div class="ingredient-tags" id="ingredientTags">
+                    <div class="empty-state" style="padding: 1rem;">
+                        <i class="fas fa-utensils"></i>
+                        <p>Add ingredients to get started</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recipe Generation Section -->
+            <section class="section">
+                <h2><i class="fas fa-magic"></i> Generate Recipes</h2>
+                
+                <button class="btn btn-accent" onclick="generateRecipes()" id="generateBtn" disabled>
+                    <i class="fas fa-robot"></i> Generate African Recipes
+                </button>
+                
+                <div id="recipeResults" class="recipe-results">
+                    <!-- Recipe results will appear here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notification Container -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Application State
+        let selectedIngredients = [];
+        let currentRecipes = [];
+        let isGenerating = false;
+
+        // Ingredient Management
+        function addIngredient() {
+            const input = document.getElementById('ingredientInput');
+            const ingredient = input.value.trim();
+            
+            if (!ingredient) {
+                showNotification('Please enter an ingredient', 'warning');
+                return;
+            }
+            
+            if (selectedIngredients.includes(ingredient)) {
+                showNotification('Ingredient already added', 'info');
+                return;
+            }
+            
+            selectedIngredients.push(ingredient);
+            input.value = '';
+            updateIngredientDisplay();
+            updateGenerateButton();
+            showNotification(`Added ${ingredient}`, 'success');
+        }
+
+        function removeIngredient(ingredient) {
+            selectedIngredients = selectedIngredients.filter(item => item !== ingredient);
+            updateIngredientDisplay();
+            updateGenerateButton();
+            showNotification(`Removed ${ingredient}`, 'info');
+        }
+
+        function handleIngredientKeypress(event) {
+            if (event.key === 'Enter') {
+                addIngredient();
+            }
+        }
+
+        function updateIngredientDisplay() {
+            const container = document.getElementById('ingredientTags');
+            
+            if (selectedIngredients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 1rem;">
+                        <i class="fas fa-utensils"></i>
+                        <p>Add ingredients to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = selectedIngredients.map(ingredient => `
+                <span class="ingredient-tag">
+                    ${ingredient}
+                    <button class="remove-tag" onclick="removeIngredient('${ingredient}')">×</button>
+                </span>
+            `).join('');
+        }
+
+        function updateGenerateButton() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = selectedIngredients.length === 0;
+            btn.style.opacity = selectedIngredients.length === 0 ? '0.5' : '1';
+        }
+
+        // Recipe Generation
+        async function generateRecipes() {
+            if (selectedIngredients.length === 0) {
+                showNotification('Please add some ingredients first', 'warning');
+                return;
+            }
+
+            if (isGenerating) return;
+            
+            isGenerating = true;
+            showLoadingState();
+            
+            try {
+                const response = await fetch('http://localhost:8001/api/recipes/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        pantry_ingredients: selectedIngredients,
+                        health_goals: ['balanced']
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentRecipes = data.recipes || [];
+                displayRecipes(currentRecipes);
+                showNotification('Recipes generated successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Recipe generation error:', error);
+                showNotification('Failed to generate recipes. Using sample data.', 'warning');
+                // Fallback to sample recipes
+                displaySampleRecipes();
+            } finally {
+                isGenerating = false;
+            }
+        }
+
+        function showLoadingState() {
+            const container = document.getElementById('recipeResults');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>AI is crafting your personalized African recipes...</p>
+                    <small>Using ingredients: ${selectedIngredients.join(', ')}</small>
+                </div>
+            `;
+        }
+
+        function displayRecipes(recipes) {
+            const container = document.getElementById('recipeResults');
+            
+            if (!recipes || recipes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <p>No recipes found. Try different ingredients!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = recipes.map(recipe => createRecipeCard(recipe)).join('');
+        }
+
+        function createRecipeCard(recipe) {
+            const ingredients = recipe.ingredients || selectedIngredients;
+            const instructions = recipe.instructions || ['Prepare ingredients', 'Cook according to traditional methods', 'Serve hot and enjoy!'];
+            const cookingTime = recipe.cooking_time || recipe.prep_time || '30 mins';
+            const difficulty = recipe.difficulty || 'Medium';
+            const servings = recipe.servings || 4;
+
+            return `
+                <div class="recipe-card">
+                    <div class="recipe-header">
+                        <h3>${recipe.name}</h3>
+                        <div class="recipe-meta">
+                            <span><i class="fas fa-clock"></i> ${cookingTime}</span>
+                            <span><i class="fas fa-users"></i> ${servings} servings</span>
+                            <span><i class="fas fa-signal"></i> ${difficulty}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="recipe-content">
+                        <div class="recipe-ingredients">
+                            <h4>Ingredients:</h4>
+                            <ul class="ingredient-list">
+                                ${ingredients.slice(0, 6).map(ing => 
+                                    `<li class="ingredient-item">${ing}</li>`
+                                ).join('')}
+                                ${ingredients.length > 6 ? `<li class="ingredient-item">+${ingredients.length - 6} more</li>` : ''}
+                            </ul>
+                        </div>
+                        
+                        <div class="recipe-instructions">
+                            <h4>Quick Steps:</h4>
+                            <ol style="padding-left: 1.5rem;">
+                                ${instructions.slice(0, 3).map(inst => 
+                                    `<li style="margin-bottom: 0.5rem;">${inst}</li>`
+                                ).join('')}
+                                ${instructions.length > 3 ? '<li><em>...and more detailed steps</em></li>' : ''}
+                            </ol>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" onclick="viewFullRecipe('${recipe.name}')">
+                                <i class="fas fa-eye"></i> View Full Recipe
+                            </button>
+                            <button class="btn btn-accent" onclick="startCooking('${recipe.name}')">
+                                <i class="fas fa-play"></i> Start Cooking
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displaySampleRecipes() {
+            const sampleRecipes = [
+                {
+                    name: "Sukuma Wiki Stir-fry",
+                    ingredients: ["Sukuma Wiki", "Onions", "Tomatoes", "Garlic", "Oil"],
+                    instructions: [
+                        "Heat oil in a pan over medium heat",
+                        "Add chopped onions and garlic, sauté until fragrant",
+                        "Add tomatoes and cook until soft",
+                        "Add chopped sukuma wiki and stir-fry for 5-7 minutes",
+                        "Season with salt and serve hot"
+                    ],
+                    cooking_time: "15 mins",
+                    difficulty: "Easy",
+                    servings: 4
+                },
+                {
+                    name: "African Rice Pilau",
+                    ingredients: ["Rice", "Beef", "Onions", "Garlic", "Spices"],
+                    instructions: [
+                        "Brown the beef in a large pot",
+                        "Add onions and spices, cook until fragrant",
+                        "Add rice and stir to coat with spices",
+                        "Add water and simmer until rice is cooked",
+                        "Let rest for 10 minutes before serving"
+                    ],
+                    cooking_time: "45 mins",
+                    difficulty: "Medium",
+                    servings: 6
+                }
+            ];
+            
+            displayRecipes(sampleRecipes);
+        }
+
+        // Recipe Actions
+        function viewFullRecipe(recipeName) {
+            const recipe = currentRecipes.find(r => r.name === recipeName);
+            if (!recipe) {
+                showNotification('Recipe not found', 'error');
+                return;
+            }
+            
+            alert(`Full recipe for ${recipeName}:\n\nIngredients:\n${recipe.ingredients.join('\n')}\n\nInstructions:\n${recipe.instructions.join('\n')}`);
+        }
+
+        function startCooking(recipeName) {
+            showNotification(`Starting cooking mode for ${recipeName}!`, 'success');
+            // Here you could implement a cooking timer or step-by-step guide
+        }
+
+        // Utility Functions
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('KE-ROUMA Clean App initialized');
+            updateGenerateButton();
+            
+            // Focus on ingredient input
+            document.getElementById('ingredientInput').focus();
+        });
+    </script>
+</body>
+</html>

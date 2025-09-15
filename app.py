@@ -44,10 +44,10 @@ app.add_middleware(
 # Include routers
 from routes.main import router as main_router
 from routes.recipes import router as recipes_router
-from routes.chat import router as chat_router
-from routes.payments import router as payments_router
 from routes.auth import router as auth_router
 from routes.users import router as users_router
+from routes.chat import router as chat_router
+from routes.payments import router as payments_router
 
 # Serve static files for development
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -59,6 +59,44 @@ app.include_router(payments_router, prefix="/api/payments", tags=["payments"])
 app.include_router(auth_router, tags=["auth"])
 app.include_router(users_router, tags=["users"])
 app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
+
+# Register FastAPI routers
+from fastapi import APIRouter
+highlights_router = APIRouter()
+kitchen_router = APIRouter()
+
+@highlights_router.post("/api/highlights/generate")
+async def generate_highlights():
+    from routes.highlights import HighlightsService
+    return await HighlightsService.generate_highlights()
+
+@highlights_router.get("/api/highlights")
+async def get_highlights():
+    from routes.highlights import HighlightsService
+    return await HighlightsService.get_highlights()
+
+@highlights_router.post("/api/highlights/refresh")
+async def refresh_highlights():
+    from routes.highlights import HighlightsService
+    return await HighlightsService.refresh_highlights()
+
+@kitchen_router.post("/api/kitchen/start-cooking")
+async def start_cooking():
+    from routes.kitchen import start_cooking
+    return start_cooking()
+
+@kitchen_router.post("/api/kitchen/next-step")
+async def next_step():
+    from routes.kitchen import next_step
+    return next_step()
+
+@kitchen_router.post("/api/kitchen/set-timer")
+async def set_timer():
+    from routes.kitchen import set_timer
+    return set_timer()
+
+app.include_router(highlights_router, tags=["highlights"])
+app.include_router(kitchen_router, tags=["kitchen"])
 
 @app.get("/health")
 async def health_check():

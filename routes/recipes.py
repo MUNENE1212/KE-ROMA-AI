@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from models.schemas import RecipeGenerationRequest, RecipeGenerationResponse, User
+from models.schemas import RecipeGenerationRequest, RecipeGenerationResponse, User, Recipe, RecipeCreate
 from services.multi_ai_service import MultiAIService
 from routes.auth import get_current_user
 from services.recipe_service import RecipeService
@@ -17,18 +17,24 @@ async def generate_recipes(request: RecipeGenerationRequest):
     """Generate AI-powered recipe recommendations based on pantry ingredients"""
     start_time = time.time()
     
+    # Debug: Log the incoming request
+    print(f"DEBUG: Received request: {request}")
+    print(f"DEBUG: Request ingredients: {request.ingredients}")
+    print(f"DEBUG: Request user_id: {request.user_id}")
+    
     try:
         # Check if user exists and premium status
         is_premium = False
-        if request.user_id:
-            is_premium = await UserService.check_premium_status(request.user_id)
+        user_id = request.user_id
+        if user_id:
+            is_premium = await UserService.check_premium_status(user_id)
         
         # Generate recipes using multi-AI service
         recipes, generation_info = await MultiAIService.generate_recipes(
-            pantry_ingredients=request.pantry_ingredients,
-            health_goals=request.health_goals,
+            pantry_ingredients=request.ingredients,
+            health_goals=request.dietary_restrictions,
             is_premium=is_premium,
-            preferred_provider=request.preferred_provider
+            preferred_provider=getattr(request, 'preferred_provider', 'gemini')
         )
         
         # Save generated recipes to database
@@ -36,8 +42,8 @@ async def generate_recipes(request: RecipeGenerationRequest):
         for recipe_data in recipes:
             recipe_create = RecipeCreate(
                 **recipe_data,
-                generated_for_user=request.user_id,
-                pantry_ingredients=request.pantry_ingredients
+                generated_for_user=user_id,
+                pantry_ingredients=request.ingredients
             )
             saved_recipe = await RecipeService.create_recipe(recipe_create)
             saved_recipes.append(saved_recipe)
@@ -47,8 +53,7 @@ async def generate_recipes(request: RecipeGenerationRequest):
         return RecipeGenerationResponse(
             recipes=saved_recipes,
             generation_time=generation_time,
-            is_premium_user=is_premium,
-            generation_info=generation_info
+            is_premium_user=is_premium
         )
         
     except Exception as e:
@@ -60,7 +65,7 @@ async def get_provider_status():
     try:
         return await MultiAIService.check_all_providers()
     except Exception as e:
-        logger.error(f"Error getting provider status: {e}")
+        print(f"Error getting provider status: {e}")
         raise HTTPException(status_code=500, detail="Failed to get provider status")
 
 @router.get("/providers/available")
@@ -95,7 +100,7 @@ async def get_saved_recipes(user_id: str):
         return recipes
         
     except Exception as e:
-        logger.error(f"Error getting saved recipes: {e}")
+        print(f"Error getting saved recipes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/save/{recipe_id}")

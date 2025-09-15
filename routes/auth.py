@@ -19,9 +19,10 @@ security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT settings
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-if not SECRET_KEY or SECRET_KEY == "your-secret-key-here":
-    raise ValueError("JWT_SECRET_KEY must be set in environment variables")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-in-production-12345")
+if SECRET_KEY == "your-jwt-secret-key-change-in-production":
+    print("Warning: Using default JWT secret key. Change this in production!")
+    SECRET_KEY = "dev-secret-key-change-in-production-12345"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -122,13 +123,21 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @router.post("/register", response_model=Token)
 async def register(request: RegisterRequest):
     try:
+        print(f"Registration attempt for phone: {request.phone_number}")
+        
+        # Validate input
+        if not request.phone_number or not request.password or not request.username:
+            raise HTTPException(status_code=400, detail="All fields are required")
+        
         # Check if user already exists
         existing_user = await UserService.get_user_by_phone(request.phone_number)
         if existing_user:
+            print(f"User already exists with phone: {request.phone_number}")
             raise HTTPException(status_code=400, detail="Phone number already registered")
         
         # Hash password
         hashed_password = get_password_hash(request.password)
+        print(f"Password hashed successfully")
         
         # Create user
         user_create = UserCreate(
@@ -138,6 +147,7 @@ async def register(request: RegisterRequest):
         )
         
         user = await UserService.create_user(user_create)
+        print(f"User created successfully with ID: {user.id}")
         
         # Create tokens
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -145,6 +155,7 @@ async def register(request: RegisterRequest):
             data={"sub": str(user.id)}, expires_delta=access_token_expires
         )
         refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        print(f"Tokens created successfully")
         
         return {
             "access_token": access_token,
@@ -164,19 +175,33 @@ async def register(request: RegisterRequest):
         raise
     except Exception as e:
         print(f"Registration error: {e}")
-        raise HTTPException(status_code=500, detail="Registration failed")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @router.post("/login", response_model=Token)
 async def login(request: LoginRequest):
     try:
+        print(f"Login attempt for phone: {request.phone_number}")
+        
+        # Validate input
+        if not request.phone_number or not request.password:
+            raise HTTPException(status_code=400, detail="Phone number and password are required")
+        
         # Get user by phone
         user = await UserService.get_user_by_phone(request.phone_number)
         if not user:
+            print(f"User not found with phone: {request.phone_number}")
             raise HTTPException(status_code=401, detail="Invalid phone number or password")
+        
+        print(f"User found: {user.username}")
         
         # Verify password
         if not verify_password(request.password, user.password):
+            print(f"Password verification failed for user: {user.username}")
             raise HTTPException(status_code=401, detail="Invalid phone number or password")
+        
+        print(f"Password verified successfully")
         
         # Create tokens
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -184,6 +209,8 @@ async def login(request: LoginRequest):
             data={"sub": str(user.id)}, expires_delta=access_token_expires
         )
         refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        
+        print(f"Login successful for user: {user.username}")
         
         return {
             "access_token": access_token,
@@ -203,7 +230,9 @@ async def login(request: LoginRequest):
         raise
     except Exception as e:
         print(f"Login error: {e}")
-        raise HTTPException(status_code=500, detail="Login failed")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(request: RefreshTokenRequest):

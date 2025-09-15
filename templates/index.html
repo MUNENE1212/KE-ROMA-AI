@@ -4,17 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KE-ROUMA - Interactive AI-Powered Recipe Experience</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
 <body>
+    <!-- Floating Background Icons -->
+    <div class="floating-icons">
+        <i class="fas fa-utensils floating-icon" style="top: 10%; left: 5%; animation-delay: 0s;"></i>
+        <i class="fas fa-pepper-hot floating-icon" style="top: 20%; right: 10%; animation-delay: 2s;"></i>
+        <i class="fas fa-carrot floating-icon" style="top: 60%; left: 8%; animation-delay: 4s;"></i>
+        <i class="fas fa-fish floating-icon" style="top: 40%; right: 15%; animation-delay: 6s;"></i>
+        <i class="fas fa-seedling floating-icon" style="top: 80%; left: 12%; animation-delay: 8s;"></i>
+        <i class="fas fa-apple-alt floating-icon" style="top: 30%; right: 5%; animation-delay: 10s;"></i>
+        <i class="fas fa-cheese floating-icon" style="top: 70%; right: 8%; animation-delay: 12s;"></i>
+        <i class="fas fa-bread-slice floating-icon" style="top: 15%; left: 15%; animation-delay: 14s;"></i>
+    </div>
+
     <!-- Application Header -->
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <div class="logo">
                     KE-ROUMA
-                    <span style="font-size: 0.6em; opacity: 0.8;">AI Ready</span>
+                    <span class="ai-badge">AI Ready</span>
                 </div>
                 <nav class="main-nav">
                     <ul class="nav-menu">
@@ -25,23 +37,27 @@
                             <i class="fas fa-robot"></i> Generate
                         </a></li>
                         <li><a href="#" class="nav-link" data-page="discover">
-                            <i class="fas fa-search"></i> Discover
+                            <i class="fas fa-compass"></i> Discover
                         </a></li>
                         <li><a href="#" class="nav-link" data-page="kitchen">
-                            <i class="fas fa-utensils"></i> Kitchen
+                            <i class="fas fa-fire"></i> Kitchen
                         </a></li>
                         <li><a href="#" class="nav-link" data-page="saved">
-                            <i class="fas fa-bookmark"></i> Saved
+                            <i class="fas fa-heart"></i> Saved
                         </a></li>
                         <li><a href="#" class="nav-link" data-page="premium">
-                            <i class="fas fa-star"></i> Premium
+                            <i class="fas fa-crown"></i> Premium
                         </a></li>
                     </ul>
                 </nav>
                 <div class="auth-section">
                     <div class="auth-buttons">
-                        <button class="btn-outline" onclick="showLoginModal()">Login</button>
-                        <button class="btn-primary" onclick="showRegisterModal()">Register</button>
+                        <button class="btn-outline" onclick="showLoginModal()">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                        <button class="btn-primary" onclick="showRegisterModal()">
+                            <i class="fas fa-user-plus"></i> Register
+                        </button>
                     </div>
                 </div>
             </div>
@@ -55,15 +71,15 @@
             <section id="home" class="page-module active">
                 <div class="hero-content">
                     <h1 class="hero-title">Your AI Kitchen Companion</h1>
-                    <p class="hero-subtitle">Experience the future of African cooking with AI that learns your taste, suggests recipes based on your mood, and guides you through every step.</p>
+                    <p class="hero-subtitle">Experience the future of African cooking with AI that learns your taste, suggests recipes based on your mood, and guides you through every step of culinary excellence.</p>
                     
                     <div class="action-grid">
                         <div class="action-card" onclick="quickAction('mood')">
-                            <i class="fas fa-smile"></i>
+                            <i class="fas fa-smile-beam"></i>
                             <span>What should I cook today?</span>
                         </div>
                         <div class="action-card" onclick="quickAction('pantry')">
-                            <i class="fas fa-camera"></i>
+                            <i class="fas fa-camera-retro"></i>
                             <span>Scan my pantry</span>
                         </div>
                         <div class="action-card" onclick="quickAction('surprise')">
@@ -71,7 +87,7 @@
                             <span>Surprise me!</span>
                         </div>
                         <div class="action-card" onclick="quickAction('healthy')">
-                            <i class="fas fa-heart"></i>
+                            <i class="fas fa-heartbeat"></i>
                             <span>Something healthy</span>
                         </div>
                     </div>
@@ -81,7 +97,7 @@
                     </button>
                 </div>
 
-                <!-- Sample Recipe Results -->
+                <!-- Enhanced Recipe Results -->
                 <div class="recipe-grid">
                     <div class="recipe-card">
                         <div class="recipe-card-content">
@@ -92,8 +108,9 @@
                             <div class="recipe-meta">
                                 <span><i class="fas fa-clock"></i> 25 mins</span>
                                 <span><i class="fas fa-users"></i> 4 servings</span>
+                                <span><i class="fas fa-star"></i> 4.8</span>
                             </div>
-                            <p>Traditional Kenyan comfort food combining creamy ugali with nutritious collard greens, perfect for a hearty family meal.</p>
+                            <p>Traditional Kenyan comfort food combining creamy ugali with nutritious collard greens, perfect for a hearty family meal that warms the soul.</p>
                             <button class="btn-primary" onclick="viewRecipe(0)">
                                 <i class="fas fa-eye"></i> View Recipe
                             </button>
@@ -109,8 +126,9 @@
                             <div class="recipe-meta">
                                 <span><i class="fas fa-clock"></i> 35 mins</span>
                                 <span><i class="fas fa-users"></i> 6 servings</span>
+                                <span><i class="fas fa-star"></i> 4.7</span>
                             </div>
-                            <p>Aromatic coconut rice paired with fresh fish, infused with coastal spices for an authentic Kenyan experience.</p>
+                            <p>Aromatic coconut rice paired with fresh fish, infused with coastal spices for an authentic Kenyan experience that brings the ocean to your table.</p>
                             <button class="btn-primary" onclick="viewRecipe(1)">
                                 <i class="fas fa-eye"></i> View Recipe
                             </button>
@@ -126,8 +144,9 @@
                             <div class="recipe-meta">
                                 <span><i class="fas fa-clock"></i> 45 mins</span>
                                 <span><i class="fas fa-users"></i> 8 servings</span>
+                                <span><i class="fas fa-star"></i> 4.9</span>
                             </div>
-                            <p>Hearty mixture of beans and corn elevated with fresh vegetables and aromatic spices for ultimate comfort.</p>
+                            <p>Hearty mixture of beans and corn elevated with fresh vegetables and aromatic spices for ultimate comfort and nutrition.</p>
                             <button class="btn-primary" onclick="viewRecipe(2)">
                                 <i class="fas fa-eye"></i> View Recipe
                             </button>
@@ -136,12 +155,12 @@
                 </div>
             </section>
 
-            <!-- Generate Page Module -->
+            <!-- Enhanced Generate Page Module -->
             <section id="generate" class="page-module">
                 <div class="module-card">
                     <div class="module-header">
-                        <h3><i class="fas fa-smile"></i> How are you feeling today?</h3>
-                        <p>Let AI suggest recipes based on your mood</p>
+                        <h3><i class="fas fa-smile-beam"></i> How are you feeling today?</h3>
+                        <p>Let our AI suggest perfect recipes based on your current mood and energy level</p>
                     </div>
                     <div class="mood-selector">
                         <div class="mood-option" onclick="setMood('energetic')" data-mood="energetic">
@@ -153,7 +172,7 @@
                             <span>Comfort</span>
                         </div>
                         <div class="mood-option" onclick="setMood('adventurous')" data-mood="adventurous">
-                            <i class="fas fa-star"></i>
+                            <i class="fas fa-rocket"></i>
                             <span>Adventurous</span>
                         </div>
                         <div class="mood-option" onclick="setMood('healthy')" data-mood="healthy">
@@ -161,7 +180,7 @@
                             <span>Healthy</span>
                         </div>
                         <div class="mood-option" onclick="setMood('quick')" data-mood="quick">
-                            <i class="fas fa-clock"></i>
+                            <i class="fas fa-tachometer-alt"></i>
                             <span>Quick</span>
                         </div>
                     </div>
@@ -170,32 +189,33 @@
 
                 <div class="module-card">
                     <div class="module-header">
-                        <h3><i class="fas fa-carrot"></i> Select Your Ingredients</h3>
+                        <h3><i class="fas fa-seedling"></i> Select Your Ingredients</h3>
+                        <p>Choose from fresh, local African ingredients to create something amazing</p>
                     </div>
                     
                     <div class="category-tabs">
                         <button class="category-tab active" onclick="showIngredientCategory('vegetables')" data-category="vegetables">
-                            <i class="fas fa-leaf"></i> Vegetables
+                            <i class="fas fa-carrot"></i> Vegetables
                         </button>
                         <button class="category-tab" onclick="showIngredientCategory('proteins')" data-category="proteins">
                             <i class="fas fa-drumstick-bite"></i> Proteins
                         </button>
                         <button class="category-tab" onclick="showIngredientCategory('grains')" data-category="grains">
-                            <i class="fas fa-seedling"></i> Grains
+                            <i class="fas fa-wheat"></i> Grains
                         </button>
                         <button class="category-tab" onclick="showIngredientCategory('spices')" data-category="spices">
                             <i class="fas fa-pepper-hot"></i> Spices
                         </button>
                     </div>
                     
-                    <input type="text" id="ingredientSearch" class="search-input" placeholder="🔍 Search ingredients..." oninput="filterIngredients()">
+                    <input type="text" id="ingredientSearch" class="search-input" placeholder="🔍 Search for ingredients..." oninput="filterIngredients()">
                     
                     <div id="ingredientOptions" class="ingredient-options">
                         <!-- Ingredients will be populated by JavaScript -->
                     </div>
                     
                     <div class="selected-ingredients">
-                        <h4>Selected Ingredients:</h4>
+                        <h4><i class="fas fa-check-circle"></i> Selected Ingredients:</h4>
                         <div id="ingredientTags" class="ingredient-tags">
                             <!-- Selected ingredients appear here -->
                         </div>
@@ -207,11 +227,28 @@
                 </div>
             </section>
 
-            <!-- Discover Page Module -->
+            <!-- Enhanced Discover Page Module -->
             <section id="discover" class="page-module">
                 <div class="module-card">
-                    <h2><i class="fas fa-search"></i> AI Recipe Discovery</h2>
-                    <p>Explore trending African recipes powered by AI</p>
+                    <div class="module-header">
+                        <h2><i class="fas fa-compass"></i> AI Recipe Discovery</h2>
+                        <p>Explore trending African recipes powered by advanced AI recommendations</p>
+                    </div>
+                    
+                    <div class="discovery-filters" style="margin: 2rem 0;">
+                        <button class="btn-glass" onclick="filterRecipes('trending')">
+                            <i class="fas fa-fire"></i> Trending
+                        </button>
+                        <button class="btn-glass" onclick="filterRecipes('popular')">
+                            <i class="fas fa-thumbs-up"></i> Popular
+                        </button>
+                        <button class="btn-glass" onclick="filterRecipes('new')">
+                            <i class="fas fa-star"></i> New
+                        </button>
+                        <button class="btn-glass" onclick="filterRecipes('healthy')">
+                            <i class="fas fa-heartbeat"></i> Healthy
+                        </button>
+                    </div>
                     
                     <div class="recipe-grid">
                         <div class="recipe-card">
@@ -223,9 +260,12 @@
                                 <div class="recipe-meta">
                                     <span><i class="fas fa-fire"></i> Trending</span>
                                     <span><i class="fas fa-star"></i> 4.8</span>
+                                    <span><i class="fas fa-clock"></i> 30 mins</span>
                                 </div>
-                                <p>Modern twist on classic Jollof rice with seasonal vegetables and aromatic spices.</p>
-                                <button class="btn-primary">Explore Recipe</button>
+                                <p>Modern twist on classic Jollof rice with seasonal vegetables and aromatic spices that create an explosion of flavors.</p>
+                                <button class="btn-primary">
+                                    <i class="fas fa-compass"></i> Explore Recipe
+                                </button>
                             </div>
                         </div>
                         
@@ -238,62 +278,129 @@
                                 <div class="recipe-meta">
                                     <span><i class="fas fa-heart"></i> Popular</span>
                                     <span><i class="fas fa-star"></i> 4.6</span>
+                                    <span><i class="fas fa-clock"></i> 50 mins</span>
                                 </div>
-                                <p>Authentic injera served with mixed vegetables and traditional berbere spice.</p>
-                                <button class="btn-primary">Explore Recipe</button>
+                                <p>Authentic injera served with mixed vegetables and traditional berbere spice blend for an authentic Ethiopian experience.</p>
+                                <button class="btn-primary">
+                                    <i class="fas fa-compass"></i> Explore Recipe
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="recipe-card">
+                            <div class="recipe-card-content">
+                                <div class="recipe-header">
+                                    <h3>Moroccan Tagine</h3>
+                                    <span class="recipe-origin">North African</span>
+                                </div>
+                                <div class="recipe-meta">
+                                    <span><i class="fas fa-star"></i> New</span>
+                                    <span><i class="fas fa-star"></i> 4.9</span>
+                                    <span><i class="fas fa-clock"></i> 60 mins</span>
+                                </div>
+                                <p>Rich and aromatic slow-cooked stew with tender meat, vegetables, and North African spices in traditional tagine style.</p>
+                                <button class="btn-primary">
+                                    <i class="fas fa-compass"></i> Explore Recipe
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Kitchen Page Module -->
+            <!-- Enhanced Kitchen Page Module -->
             <section id="kitchen" class="page-module">
                 <div class="module-card">
-                    <h2><i class="fas fa-utensils"></i> Your Smart Kitchen</h2>
-                    <p>AI-powered cooking assistance and timer management</p>
+                    <div class="module-header">
+                        <h2><i class="fas fa-fire"></i> Your Smart Kitchen</h2>
+                        <p>AI-powered cooking assistance, timer management, and real-time guidance</p>
+                    </div>
+                    
+                    <div class="kitchen-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin: 3rem 0;">
+                        <div class="stat-card" style="background: rgba(39, 174, 96, 0.1); padding: 2rem; border-radius: 15px; text-align: center; border: 2px solid rgba(39, 174, 96, 0.3);">
+                            <i class="fas fa-utensils" style="font-size: 3rem; color: var(--success); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--success); margin-bottom: 0.5rem;">12</h3>
+                            <p>Recipes Cooked</p>
+                        </div>
+                        <div class="stat-card" style="background: rgba(243, 156, 18, 0.1); padding: 2rem; border-radius: 15px; text-align: center; border: 2px solid rgba(243, 156, 18, 0.3);">
+                            <i class="fas fa-clock" style="font-size: 3rem; color: var(--accent-solid); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--accent-solid); margin-bottom: 0.5rem;">2h 30m</h3>
+                            <p>Cooking Time Saved</p>
+                        </div>
+                        <div class="stat-card" style="background: rgba(231, 76, 60, 0.1); padding: 2rem; border-radius: 15px; text-align: center; border: 2px solid rgba(231, 76, 60, 0.3);">
+                            <i class="fas fa-heart" style="font-size: 3rem; color: var(--error); margin-bottom: 1rem;"></i>
+                            <h3 style="color: var(--error); margin-bottom: 0.5rem;">8</h3>
+                            <p>Favorite Dishes</p>
+                        </div>
+                    </div>
                     
                     <div class="action-grid">
-                        <div class="action-card">
-                            <i class="fas fa-play"></i>
+                        <div class="action-card" onclick="startCookingMode()">
+                            <i class="fas fa-play-circle"></i>
                             <span>Start Cooking Mode</span>
                         </div>
-                        <div class="action-card">
-                            <i class="fas fa-clock"></i>
-                            <span>Set Timer</span>
+                        <div class="action-card" onclick="setTimer()">
+                            <i class="fas fa-stopwatch"></i>
+                            <span>Smart Timer</span>
                         </div>
-                        <div class="action-card">
+                        <div class="action-card" onclick="voiceCommands()">
                             <i class="fas fa-microphone"></i>
-                            <span>Voice Commands</span>
+                            <span>Voice Assistant</span>
                         </div>
-                        <div class="action-card">
+                        <div class="action-card" onclick="nutritionInfo()">
                             <i class="fas fa-chart-pie"></i>
-                            <span>Nutrition Info</span>
+                            <span>Nutrition Analysis</span>
+                        </div>
+                        <div class="action-card" onclick="mealPlanner()">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Meal Planner</span>
+                        </div>
+                        <div class="action-card" onclick="shoppingList()">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Shopping List</span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Saved Page Module -->
+            <!-- Enhanced Saved Page Module -->
             <section id="saved" class="page-module">
                 <div class="module-card">
-                    <h2><i class="fas fa-bookmark"></i> My Saved Recipes</h2>
-                    <p>Your personalized collection of favorite recipes</p>
+                    <div class="module-header">
+                        <h2><i class="fas fa-heart"></i> My Saved Recipes</h2>
+                        <p>Your personalized collection of favorite African recipes</p>
+                    </div>
+                    
+                    <div class="saved-filters" style="margin: 2rem 0;">
+                        <button class="btn-glass" onclick="filterSaved('all')">
+                            <i class="fas fa-list"></i> All Recipes
+                        </button>
+                        <button class="btn-glass" onclick="filterSaved('recent')">
+                            <i class="fas fa-clock"></i> Recently Added
+                        </button>
+                        <button class="btn-glass" onclick="filterSaved('favorites')">
+                            <i class="fas fa-star"></i> Top Rated
+                        </button>
+                        <button class="btn-glass" onclick="filterSaved('quick')">
+                            <i class="fas fa-bolt"></i> Quick Meals
+                        </button>
+                    </div>
                     
                     <div id="savedRecipesContainer">
-                        <div id="savedRecipesLoading" style="display: none; text-align: center; padding: 2rem;">
-                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-solid);"></i>
-                            <p>Loading your saved recipes...</p>
+                        <div id="savedRecipesLoading" style="display: none; text-align: center; padding: 3rem;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-solid);"></i>
+                            <p style="margin-top: 1rem; font-size: 1.1rem;">Loading your saved recipes...</p>
                         </div>
                         
-                        <div id="savedRecipesList" class="recipes-grid">
+                        <div id="savedRecipesList" class="recipe-grid">
                             <!-- Saved recipes will be populated here -->
                         </div>
                         
-                        <div id="noSavedRecipes" style="text-align: center; padding: 3rem; color: var(--text-light);">
-                            <i class="fas fa-bookmark" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p>No saved recipes yet. Start exploring and save your favorites!</p>
-                            <button class="btn-primary" onclick="Navigation.showPage('generate')">
+                        <div id="noSavedRecipes" style="text-align: center; padding: 4rem; color: var(--text-light);">
+                            <i class="fas fa-heart" style="font-size: 5rem; margin-bottom: 2rem; opacity: 0.3;"></i>
+                            <h3 style="margin-bottom: 1rem;">No saved recipes yet</h3>
+                            <p style="margin-bottom: 2rem;">Start exploring and save your favorites to build your personal recipe collection!</p>
+                            <button class="btn-primary" onclick="showPage('discover')">
                                 <i class="fas fa-search"></i> Discover Recipes
                             </button>
                         </div>
@@ -301,72 +408,105 @@
                 </div>
             </section>
 
-            <!-- Premium Page Module -->
+            <!-- Enhanced Premium Page Module -->
             <section id="premium" class="page-module">
                 <div class="module-card">
-                    <div style="text-align: center; margin-bottom: 3rem;">
-                        <h2><i class="fas fa-star"></i> KE-ROUMA Premium</h2>
-                        <p style="font-size: 1.2rem; color: var(--text-light);">Unlock the full power of AI-driven African cuisine</p>
+                    <div style="text-align: center; margin-bottom: 4rem;">
+                        <h2><i class="fas fa-crown"></i> KE-ROUMA Premium</h2>
+                        <p style="font-size: 1.3rem; color: var(--text-light); margin-top: 1rem;">Unlock the full power of AI-driven African cuisine with premium features designed for culinary excellence</p>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 3rem 0;">
-                        <div style="background: rgba(255,255,255,0.95); padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow-soft); text-align: center;">
-                            <h3>Basic</h3>
-                            <div style="font-size: 2rem; font-weight: 700; margin: 1rem 0;">Free</div>
-                            <ul style="list-style: none; padding: 0; text-align: left;">
-                                <li style="padding: 0.5rem 0; color: var(--success);">✅ 5 AI recipes per day</li>
-                                <li style="padding: 0.5rem 0; color: var(--success);">✅ Basic ingredient suggestions</li>
-                                <li style="padding: 0.5rem 0; color: var(--text-muted);">❌ Advanced AI features</li>
-                                <li style="padding: 0.5rem 0; color: var(--text-muted);">❌ Unlimited recipes</li>
+                    <div class="premium-plan-grid">
+                        <div class="premium-plan">
+                            <h3><i class="fas fa-utensils"></i> Basic</h3>
+                            <div class="premium-price">Free</div>
+                            <ul class="premium-features">
+                                <li>5 AI recipes per day</li>
+                                <li>Basic ingredient suggestions</li>
+                                <li>Simple cooking timers</li>
+                                <li>Standard recipe search</li>
+                                <li>Basic nutrition info</li>
                             </ul>
-                            <button class="btn-outline" disabled>Current Plan</button>
+                            <button class="btn-outline" disabled>
+                                <i class="fas fa-check"></i> Current Plan
+                            </button>
                         </div>
 
-                        <div style="background: var(--primary); color: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow-strong); text-align: center; transform: scale(1.05); position: relative;">
-                            <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent-solid); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Most Popular</div>
-                            <h3>Premium</h3>
-                            <div style="font-size: 2rem; font-weight: 700; margin: 1rem 0;">KES 299<span style="font-size: 1rem; opacity: 0.8;">/month</span></div>
-                            <ul style="list-style: none; padding: 0; text-align: left;">
-                                <li style="padding: 0.5rem 0;">✅ Unlimited AI recipes</li>
-                                <li style="padding: 0.5rem 0;">✅ Advanced ingredient analysis</li>
-                                <li style="padding: 0.5rem 0;">✅ Personalized meal planning</li>
-                                <li style="padding: 0.5rem 0;">✅ Voice-powered cooking assistant</li>
-                                <li style="padding: 0.5rem 0;">✅ Nutritional insights</li>
-                                <li style="padding: 0.5rem 0;">✅ Priority support</li>
+                        <div class="premium-plan featured">
+                            <h3><i class="fas fa-crown"></i> Premium</h3>
+                            <div class="premium-price">KES 299<span style="font-size: 1rem; opacity: 0.8;">/month</span></div>
+                            <ul class="premium-features">
+                                <li>Unlimited AI recipe generation</li>
+                                <li>Advanced ingredient analysis & substitutions</li>
+                                <li>Personalized meal planning & calendar</li>
+                                <li>Voice-powered cooking assistant</li>
+                                <li>Detailed nutritional insights & tracking</li>
+                                <li>Smart shopping list generation</li>
+                                <li>Recipe video tutorials</li>
+                                <li>Priority customer support</li>
+                                <li>Exclusive premium recipe collections</li>
                             </ul>
                             <button class="btn-secondary btn-large" onclick="openPaymentModal()" style="background: var(--accent); margin-top: 1rem;">
                                 <i class="fas fa-rocket"></i> Upgrade to Premium
                             </button>
                         </div>
+
+                        <div class="premium-plan" style="border: 2px solid var(--accent-solid);">
+                            <h3><i class="fas fa-star"></i> Pro Chef</h3>
+                            <div class="premium-price">KES 599<span style="font-size: 1rem; opacity: 0.8;">/month</span></div>
+                            <ul class="premium-features">
+                                <li>Everything in Premium</li>
+                                <li>AI-powered menu planning for restaurants</li>
+                                <li>Bulk recipe scaling calculations</li>
+                                <li>Professional kitchen management tools</li>
+                                <li>Cost analysis & profit margins</li>
+                                <li>Staff training modules</li>
+                                <li>Multi-location recipe sync</li>
+                                <li>Advanced analytics & reporting</li>
+                                <li>White-label customization options</li>
+                            </ul>
+                            <button class="btn-primary" onclick="contactSales()">
+                                <i class="fas fa-phone"></i> Contact Sales
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 4rem; padding: 3rem; background: rgba(44, 85, 48, 0.05); border-radius: 20px;">
+                        <h3 style="color: var(--primary-solid); margin-bottom: 1rem;">
+                            <i class="fas fa-shield-alt"></i> 30-Day Money-Back Guarantee
+                        </h3>
+                        <p>Try KE-ROUMA Premium risk-free. If you're not completely satisfied, we'll refund your entire payment within 30 days.</p>
                     </div>
                 </div>
             </section>
         </div>
     </main>
 
-    <!-- AI Chat Assistant -->
-    <div class="chat-toggle" onclick="toggleChat()">
+    <!-- Enhanced AI Chat Assistant -->
+    <div class="chat-toggle">
         <i class="fas fa-robot"></i>
     </div>
 
     <div id="chatWindow" class="chat-window">
         <div class="chat-header">
-            🤖 AI Kitchen Assistant
+            <strong>AI Kitchen Assistant</strong>
+            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Ask me anything about cooking!</p>
         </div>
         <div class="chat-messages">
             <div class="chat-message ai">
-                👋 Hi! I'm your AI cooking assistant. Ask me anything about African recipes, ingredients, or cooking tips!
+                <i class="fas fa-robot" style="margin-right: 0.5rem; color: var(--primary-solid);"></i>
+                Hi there! I'm your AI cooking assistant. I can help you with African recipes, cooking techniques, ingredient substitutions, and meal planning. What would you like to cook today?
             </div>
         </div>
-        <div style="display: flex; padding: 1rem; border-top: 1px solid var(--border);">
-            <input type="text" id="chatInput" placeholder="Ask about recipes, ingredients, or cooking tips..." style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-small); margin-right: 0.5rem;">
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Ask about recipes, ingredients, or cooking tips..." onkeypress="handleChatKeyPress(event)">
             <button class="btn-primary" onclick="sendChatMessage()">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </div>
 
-    <!-- Recipe Modal -->
+    <!-- Enhanced Recipe Modal -->
     <div id="recipeModal" class="modal" style="display: none;">
         <div class="modal-overlay">
             <div class="modal-content recipe-modal-content">
@@ -378,60 +518,60 @@
         </div>
     </div>
 
-    <!-- Payment Modal -->
+    <!-- Enhanced Payment Modal -->
     <div id="paymentModal" class="modal" style="display: none;">
         <div class="modal-overlay">
             <div class="modal-content payment-modal-content">
                 <span class="close" onclick="closePaymentModal()">&times;</span>
                 <div id="paymentContent">
-                    <h2><i class="fas fa-credit-card"></i> Upgrade to Premium</h2>
-                    <p>Choose your premium plan and payment method</p>
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h2><i class="fas fa-credit-card"></i> Upgrade to Premium</h2>
+                        <p>Choose your premium plan and payment method</p>
+                    </div>
                     
                     <div class="payment-plans">
-                        <div class="payment-plan selected" data-plan="premium">
-                            <h3>Premium Plan</h3>
+                        <div class="payment-plan selected" data-plan="premium" style="border: 2px solid var(--primary-solid); background: rgba(44, 85, 48, 0.05);">
+                            <h3><i class="fas fa-crown"></i> Premium Plan</h3>
                             <div class="plan-price">KES 299<span>/month</span></div>
-                            <ul>
-                                <li>✅ Unlimited AI recipes</li>
-                                <li>✅ Advanced ingredient analysis</li>
-                                <li>✅ Personalized meal planning</li>
-                                <li>✅ Voice-powered cooking assistant</li>
+                            <ul style="list-style: none; padding: 0; margin: 1rem 0;">
+                                <li style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Unlimited AI recipes</li>
+                                <li style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Advanced ingredient analysis</li>
+                                <li style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Personalized meal planning</li>
+                                <li style="padding: 0.25rem 0;"><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Voice-powered cooking assistant</li>
                             </ul>
                         </div>
                     </div>
                     
                     <div class="payment-form">
-                        <h3>Payment Details</h3>
+                        <h3><i class="fas fa-mobile-alt"></i> Payment Details</h3>
                         <div class="form-group">
-                            <label for="paymentPhone">M-Pesa Phone Number</label>
+                            <label for="paymentPhone"><i class="fas fa-phone"></i> M-Pesa Phone Number</label>
                             <input type="tel" id="paymentPhone" placeholder="254XXXXXXXXX" required>
                         </div>
                         
-                        <div class="payment-summary">
-                            <div class="summary-row">
-                                <span>Plan:</span>
+                        <div class="payment-summary" style="background: rgba(44, 85, 48, 0.05); padding: 1.5rem; border-radius: 10px; margin: 2rem 0;">
+                            <div class="summary-row" style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                                <span><i class="fas fa-tag"></i> Plan:</span>
                                 <span id="selectedPlanName">Premium Plan</span>
                             </div>
-                            <div class="summary-row total">
+                            <div class="summary-row total" style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-top: 1px solid var(--border); font-weight: 700; font-size: 1.2rem;">
                                 <span>Total:</span>
                                 <span id="selectedPlanPrice">KES 299</span>
                             </div>
                         </div>
                         
-                        <button class="btn-primary btn-large" onclick="initiatePayment()" id="paymentButton">
+                        <button class="btn-primary btn-large" onclick="initiatePayment()" id="paymentButton" style="width: 100%;">
                             <i class="fas fa-mobile-alt"></i> Pay with M-Pesa
                         </button>
                     </div>
                 </div>
                 
                 <div id="paymentStatus" style="display: none;">
-                    <!-- Payment status will be shown here -->
+                    Payment successful! Welcome to KE-ROUMA Premium!
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Interactive JavaScript -->
     <script src="static/js/modules.js"></script>
 </body>
 </html>
